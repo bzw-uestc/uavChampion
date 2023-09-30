@@ -3,7 +3,7 @@
 #common parameters
 #support: 1 imu 1 cam; 1 imu 2 cam: 2 cam; 
 imu: 1         
-num_of_cam: 2
+num_of_cam: 1
 
 
 imu_topic: "/airsim_node/drone_1/imu/imu"
@@ -21,10 +21,33 @@ image_height: 480
    
 
 # Extrinsic parameter between IMU and Camera.
-estimate_extrinsic: 1   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
+estimate_extrinsic: 0   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
                         # 1  Have an initial guess about extrinsic parameters. We will optimize around your initial guess.
 
 body_T_cam0: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   # data: [ 2.0927958047135764e-02, -9.9976921859894707e-01,
+   #     4.8507848878128383e-03, -1.3287578286938959e-01,
+   #     9.9974196050002173e-01, 2.0969763625459659e-02,
+   #     8.7339240359228850e-03, -9.2737524876769964e-02,
+   #     -8.8336282211925743e-03, 4.6667499978952209e-03,
+   #     9.9995009298309823e-01, 3.5457889584480673e-01, 0., 0., 0., 1. ]
+   # data: [ 1.0268696406804723e-02, -9.9993390875272126e-01,
+   #     5.1702998567961624e-03, -1.6519748613690238e-01,
+   #     9.9991714254573916e-01, 1.0308390221788755e-02,
+   #     7.7100670684042850e-03, -1.3047869611041446e-01,
+   #     -7.7628549689426453e-03, 5.0906991209107161e-03,
+   #     9.9995691050424340e-01, 4.2068268396977582e-01, 0., 0., 0., 1. ]
+   data: [ -1.2011755535951574e-02, -9.9989771278249839e-01,
+       -7.7641291381007780e-03, -1.7537934807651159e-01,
+       9.9991479583090936e-01, -1.2050922069499759e-02,
+       5.0176045784532473e-03, -7.4810113937173170e-02,
+       -5.1106562568231781e-03, -7.7031973623564020e-03,
+       9.9995727005858659e-01, 5.5546220644694155e-01, 0., 0., 0., 1. ]
+
+body_T_cam1: !!opencv-matrix
    rows: 4
    cols: 4
    dt: d
@@ -33,20 +56,11 @@ body_T_cam0: !!opencv-matrix
           0.0, 0.0, 1.0, 0.0,
           0.0, 0.0, 0.0, 1.0]
 
-body_T_cam1: !!opencv-matrix
-   rows: 4
-   cols: 4
-   dt: d
-   data: [1.0, 0.0, 0.0, 0.095,
-          0.0, 1.0, 0.0, -0.26,
-          0.0, 0.0, 1.0, 0.0,
-          0.0, 0.0, 0.0, 1.0]
-
 #Multiple thread support
 multiple_thread: 1
 
 #feature traker paprameters
-max_cnt: 200            # max feature number in feature tracking
+max_cnt: 250            # max feature number in feature tracking
 min_dist: 30            # min distance between two features 
 freq: 10                # frequence (Hz) of publish tracking result. At least 10Hz for good estimation. If set 0, the frequence will be same as raw image 
 F_threshold: 1.0        # ransac threshold (pixel)
@@ -66,7 +80,7 @@ gyr_w: 1.3744681532786113e-06       # gyroscope bias random work noise standard 
 g_norm: 9.805 
 
 #unsynchronization parameters
-estimate_td: 1                      # online estimate time offset between camera and imu
+estimate_td: 0                      # online estimate time offset between camera and imu
 td: 0                             # initial value of time offset. unit: s. readed image clock + td = real image clock (IMU clock)
 
 #loop closure parameters

@@ -1568,7 +1568,7 @@ namespace ego_planner
 
         if (!flag_occ)
         {
-          printf("\033[32miter(+1)=%d,time(ms)=%5.3f,total_t(ms)=%5.3f,cost=%5.3f\n\033[0m", iter_num_, time_ms, total_time_ms, final_cost);
+          // printf("\033[32miter(+1)=%d,time(ms)=%5.3f,total_t(ms)=%5.3f,cost=%5.3f\n\033[0m", iter_num_, time_ms, total_time_ms, final_cost); //mark
           success = true;
         }
         else // restart
@@ -1584,7 +1584,7 @@ namespace ego_planner
       {
         flag_force_return = true;
         rebound_times++;
-        cout << "iter=" << iter_num_ << ",time(ms)=" << time_ms << ",rebound." << endl;
+        // cout << "iter=" << iter_num_ << ",time(ms)=" << time_ms << ",rebound." << endl; //mark
       }
       else
       {
@@ -1643,7 +1643,7 @@ namespace ego_planner
       {
         if (grid_map_->getInflateOccupancy(traj.evaluateDeBoorT(t)))
         {
-          // cout << "Refined traj hit_obs, t=" << t << " P=" << traj.evaluateDeBoorT(t).transpose() << endl;
+          // cout << "Refined traj hit_obs, t=" << t << " P=" << traj.evaluateDeBoorT(t).transpose() << endl; //mark
 
           Eigen::MatrixXd ref_pts(ref_pts_.size(), 3);
           for (size_t i = 0; i < ref_pts_.size(); i++)
@@ -1664,7 +1664,7 @@ namespace ego_planner
 
     lambda4_ = origin_lambda4;
 
-    //cout << "iter_num_=" << iter_num_ << endl;
+    //cout << "iter_num_=" << iter_num_ << endl;  //mark
 
     return flag_safe;
   }

@@ -11,7 +11,7 @@
 
 using namespace ros;
 using namespace Eigen;
-ros::Publisher pub_odometry, pub_latest_odometry;
+ros::Publisher pub_odometry, pub_latest_odometry ,pub_latest_odom_pose;
 ros::Publisher pub_path;
 ros::Publisher pub_point_cloud, pub_margin_cloud;
 ros::Publisher pub_key_poses;
@@ -33,7 +33,8 @@ size_t pub_counter = 0;
 
 void registerPub(ros::NodeHandle &n)
 {
-    pub_latest_odometry = n.advertise<nav_msgs::Odometry>("imu_propagate", 1000);
+    pub_latest_odometry = n.advertise<nav_msgs::Odometry>("imu_propagate", 1);
+    pub_latest_odom_pose = n.advertise<geometry_msgs::Pose>("vins_odom_pose", 1);
     pub_path = n.advertise<nav_msgs::Path>("path", 1000);
     pub_odometry = n.advertise<nav_msgs::Odometry>("odometry", 1000);
     pub_point_cloud = n.advertise<sensor_msgs::PointCloud>("point_cloud", 1000);
@@ -56,12 +57,31 @@ void pubLatestOdometry(const Eigen::Vector3d &P, const Eigen::Quaterniond &Q, co
     odometry.header.stamp = ros::Time(t);
     odometry.header.frame_id = "world";
     odometry.pose.pose.position.x = P.x();
-    odometry.pose.pose.position.y = P.y();
+    odometry.pose.pose.position.y = -P.y();
     odometry.pose.pose.position.z = P.z();
-    odometry.pose.pose.orientation.x = Q.x();
-    odometry.pose.pose.orientation.y = Q.y();
-    odometry.pose.pose.orientation.z = Q.z();
-    odometry.pose.pose.orientation.w = Q.w();
+    //vins中的里程計y軸和yaw軸是相反的 需要做座標系的轉換
+    nav_msgs::Odometry odometry_temp;
+    odometry_temp.pose.pose.orientation.x = Q.x();
+    odometry_temp.pose.pose.orientation.y = Q.y();
+    odometry_temp.pose.pose.orientation.z = Q.z();
+    odometry_temp.pose.pose.orientation.w = Q.w();
+    tf::Quaternion quat;
+    tf::quaternionMsgToTF(odometry_temp.pose.pose.orientation, quat);
+    double roll, pitch, yaw;//定义存储r\p\y的容器
+    tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);//进行转换
+    yaw = -yaw;
+    roll = -(roll + 3.1415);
+    if (roll < -6.2)
+    {
+        roll = roll + 6.28;
+    }
+    pitch = -pitch;
+    // ROS_INFO("123,roll:%f,pitch:%f,yaw:%f",roll,pitch,yaw);
+    // ROS_INFO("yaw: %f",yaw);
+    odometry_temp.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw);//返回四元数
+    odometry.pose.pose.orientation = odometry_temp.pose.pose.orientation;
+    
+
     odometry.twist.twist.linear.x = V.x();
     odometry.twist.twist.linear.y = V.y();
     odometry.twist.twist.linear.z = V.z();

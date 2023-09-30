@@ -214,7 +214,7 @@ namespace ego_planner
     if (msg->pose.position.z < -0.1)
       return;
 
-    cout << "Triggered!" << endl;
+    // cout << "Triggered!" << endl;
     // trigger_ = true;
     init_pt_ = odom_pos_;
 
@@ -419,7 +419,7 @@ namespace ego_planner
     static string state_str[8] = {"INIT", "WAIT_TARGET", "GEN_NEW_TRAJ", "REPLAN_TRAJ", "EXEC_TRAJ", "EMERGENCY_STOP", "SEQUENTIAL_START"};
     int pre_s = int(exec_state_);
     exec_state_ = new_state;
-    cout << "[" + pos_call + "]: from " + state_str[pre_s] + " to " + state_str[int(new_state)] << endl;
+    // cout << "[" + pos_call + "]: from " + state_str[pre_s] + " to " + state_str[int(new_state)] << endl;
   }
 
   std::pair<int, EGOReplanFSM::FSM_EXEC_STATE> EGOReplanFSM::timesOfConsecutiveStateCalls()
@@ -431,7 +431,7 @@ namespace ego_planner
   {
     static string state_str[8] = {"INIT", "WAIT_TARGET", "GEN_NEW_TRAJ", "REPLAN_TRAJ", "EXEC_TRAJ", "EMERGENCY_STOP", "SEQUENTIAL_START"};
 
-    cout << "[FSM]: state: " + state_str[int(exec_state_)] << endl;
+    // cout << "[FSM]: state: " + state_str[int(exec_state_)] << endl;
   }
 
   void EGOReplanFSM::execFSMCallback(const ros::TimerEvent &e)
@@ -767,7 +767,7 @@ namespace ego_planner
         planner_manager_->reboundReplan(start_pt_, start_vel_, start_acc_, local_target_pt_, local_target_vel_, (have_new_target_ || flag_use_poly_init), flag_randomPolyTraj);
     have_new_target_ = false;
 
-    cout << "refine_success=" << plan_and_refine_success << endl;
+    // cout << "refine_success=" << plan_and_refine_success << endl;
 
     if (plan_and_refine_success)
     {

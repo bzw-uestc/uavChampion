@@ -137,7 +137,7 @@ void imu_callback(const sensor_msgs::ImuConstPtr &imu_msg)
     double t = imu_msg->header.stamp.toSec();
     double dx = imu_msg->linear_acceleration.x;
     double dy = imu_msg->linear_acceleration.y;
-    double dz = -imu_msg->linear_acceleration.z ;
+    double dz = imu_msg->linear_acceleration.z;
     double rx = imu_msg->angular_velocity.x;
     double ry = imu_msg->angular_velocity.y;
     double rz = imu_msg->angular_velocity.z;

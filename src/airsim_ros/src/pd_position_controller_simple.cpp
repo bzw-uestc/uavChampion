@@ -41,6 +41,7 @@ void PIDPositionController::initialize_ros()
     airsim_vel_cmd_body_frame_pub_ = nh_.advertise<airsim_ros::VelCmd>("/airsim_node/drone_1/vel_cmd_body_frame", 1);
     // ROS subscribers
     airsim_odom_sub_ = nh_.subscribe("/airsim_node/drone_1/debug/pose_gt", 50, &PIDPositionController::airsim_odom_cb, this);
+    // visual_odom_sub_ = nh_.subscribe("/vins_fusion/imu_propagate", 50, &PIDPositionController::visual_odom_cb, this);
     //home_geopoint_sub_ = nh_.subscribe("/airsim_node/home_geo_point", 50, &PIDPositionController::home_geopoint_cb, this);
     // todo publish this under global nodehandle / "airsim node" and hide it from user
     local_position_goal_srvr_ = nh_.advertiseService("/airsim_node/local_position_goal", &PIDPositionController::local_position_goal_srv_cb, this);
@@ -66,6 +67,18 @@ void PIDPositionController::airsim_odom_cb(const geometry_msgs::Pose& odom_msg)
     curr_position_.y = odom_msg.position.y;
     curr_position_.z = odom_msg.position.z;
     curr_position_.yaw = utils::get_yaw_from_quat_msg(odom_msg.orientation);
+    // ROS_INFO("%f %f %f %f", odom_msg.orientation.w, odom_msg.orientation.x,odom_msg.orientation.y,odom_msg.orientation.z);
+    // ROS_INFO("GET pose %f %f %f %f", odom_msg.position.x, odom_msg.position.y, odom_msg.position.z, curr_position_.yaw);
+}
+
+void PIDPositionController::visual_odom_cb(const nav_msgs::Odometry& odom_msg)
+{
+    has_odom_ = true;
+    // curr_odom_ = odom_msg;
+    curr_position_.x = odom_msg.pose.pose.position.x;
+    curr_position_.y = odom_msg.pose.pose.position.y;
+    curr_position_.z = -odom_msg.pose.pose.position.z;
+    curr_position_.yaw = utils::get_yaw_from_quat_msg(odom_msg.pose.pose.orientation);
     // ROS_INFO("%f %f %f %f", odom_msg.orientation.w, odom_msg.orientation.x,odom_msg.orientation.y,odom_msg.orientation.z);
     // ROS_INFO("GET pose %f %f %f %f", odom_msg.position.x, odom_msg.position.y, odom_msg.position.z, curr_position_.yaw);
 }

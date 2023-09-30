@@ -532,7 +532,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
             Bas[frame_count] = Bas[prev_frame];
             Bgs[frame_count] = Bgs[prev_frame];
         }
-
+        
     }
     else
     {
@@ -576,11 +576,17 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
         updateLatestStates();
     }  
 }
-
+/**
+ * @brief VIO初始化，将滑窗中的P V Q恢复到第0帧并且和重力对齐    通过视觉SLAM的方式求取图像的位姿和3D点
+ * 
+ * @return true 
+ * @return false 
+ */
 bool Estimator::initialStructure()
 {
     TicToc t_sfm;
-    //check imu observibility
+    // Step 1 检查imu激励
+    // 计算初始化阶段的imu产生的加速度标准差，若大于阈值，则获得足够imu激励，否则imu激励不够
     {
         map<double, ImageFrame>::iterator frame_it;
         Vector3d sum_g;
@@ -608,11 +614,12 @@ bool Estimator::initialStructure()
             //return false;
         }
     }
-    // global sfm
-    Quaterniond Q[frame_count + 1];
-    Vector3d T[frame_count + 1];
-    map<int, Vector3d> sfm_tracked_points;
-    vector<SFMFeature> sfm_f;
+    // global sfm  纯视觉SLAM
+    Quaterniond Q[frame_count + 1]; // 用于存储滑窗中恢复出来的各个旋转
+    Vector3d T[frame_count + 1]; // 用于存储滑窗中恢复出来的各个平移
+    map<int, Vector3d> sfm_tracked_points; // 用于存储滑窗中观察到的地图点
+    vector<SFMFeature> sfm_f; // 保存每个特征点的信息
+    // 遍历所有的特征点
     for (auto &it_per_id : f_manager.feature)
     {
         int imu_j = it_per_id.start_frame - 1;
@@ -745,7 +752,9 @@ bool Estimator::visualInitialAlign()
         all_image_frame[Headers[i]].is_key_frame = true;
     }
 
-    double s = (x.tail<1>())(0);
+    double s = (x.tail<1>())(0); //-1851467565
+    // double s = -1851467565;
+    ROS_ERROR("%d",s);
     for (int i = 0; i <= WINDOW_SIZE; i++)
     {
         pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);

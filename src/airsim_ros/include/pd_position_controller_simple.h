@@ -33,7 +33,7 @@ public:
     double reached_yaw_degrees;
 
     PIDParams()
-        : kp_x(1.0), kp_y(1.0), kp_z(1.0), kp_yaw(0.5), kd_x(0.8), kd_y(0.8), kd_z(0.8), kd_yaw(0.4), reached_thresh_xyz(0.5), reached_yaw_degrees(2.0)
+        : kp_x(0.5), kp_y(0.5), kp_z(0.5), kp_yaw(0.5), kd_x(0.5), kd_y(0.5), kd_z(0.5), kd_yaw(0.2), reached_thresh_xyz(0.5), reached_yaw_degrees(0.5)
     {
     }
 
@@ -57,7 +57,7 @@ public:
     double max_yaw_rate_degree;
 
     DynamicConstraints()
-        : max_vel_horz_abs(1.5), max_vel_vert_abs(1.5), max_yaw_rate_degree(5)  //2 2 30
+        : max_vel_horz_abs(2.0), max_vel_vert_abs(2.0), max_yaw_rate_degree(2)  //2 2 30
     {
     }
 
@@ -77,6 +77,7 @@ public:
 
     // ROS subscriber callbacks
     void airsim_odom_cb(const geometry_msgs::Pose& odom_msg);
+    void visual_odom_cb(const nav_msgs::Odometry& odom_msg);
     //void home_geopoint_cb(const airsim_ros::GPSYaw& gps_msg);
 
     void update_control_cmd_timer_cb(const ros::TimerEvent& event);
@@ -119,6 +120,7 @@ private:
     // ros::Publisher airsim_vel_cmd_world_frame_pub_;
     ros::Publisher airsim_vel_cmd_body_frame_pub_;
     ros::Subscriber airsim_odom_sub_;
+    ros::Subscriber visual_odom_sub_;
     ros::Subscriber home_geopoint_sub_;
     ros::ServiceServer local_position_goal_srvr_;
     ros::ServiceServer local_position_goal_override_srvr_;

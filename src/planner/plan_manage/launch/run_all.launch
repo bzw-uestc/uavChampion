@@ -1,5 +1,5 @@
 <launch>
-    <include file="$(find stereo2depth)/launch/uavControl.launch"/>
+    <!-- <include file="$(find uav_control)/launch/uavControl.launch"/> -->
     <include file="$(find ego_planner)/launch/single_run_in_uav.launch"/>
 
 </launch>
