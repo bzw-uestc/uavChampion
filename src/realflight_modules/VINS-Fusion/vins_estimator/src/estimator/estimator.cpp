@@ -208,7 +208,7 @@ void Estimator::inputIMU(double t, const Vector3d &linearAcceleration, const Vec
     {
         mPropagate.lock();
         fastPredictIMU(t, linearAcceleration, angularVelocity);
-        pubLatestOdometry(latest_P, latest_Q, latest_V, t);
+        pubLatestOdometry(latest_P, latest_Q, latest_V, latest_gyr_0, t);
         mPropagate.unlock();
     }
 }
@@ -754,7 +754,7 @@ bool Estimator::visualInitialAlign()
 
     double s = (x.tail<1>())(0); //-1851467565
     // double s = -1851467565;
-    ROS_ERROR("%d",s);
+    // ROS_ERROR("%d",s);
     for (int i = 0; i <= WINDOW_SIZE; i++)
     {
         pre_integrations[i]->repropagate(Vector3d::Zero(), Bgs[i]);

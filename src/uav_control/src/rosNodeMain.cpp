@@ -91,7 +91,7 @@ int main(int argc, char** argv)
   }
 
   uavControl drone0(nh);
-  ros::Rate uavControl_loop_rate(100);//设置循环频率，20Hz；也可以设为其他频率，如1为1Hz
+  ros::Rate uavControl_loop_rate(30);//设置循环频率，20Hz；也可以设为其他频率，如1为1Hz
   std::thread uavControl_thread([&]() {
     while (ros::ok()) {
       drone0.uavControlTask();
@@ -133,8 +133,6 @@ int main(int argc, char** argv)
           cv::cvtColor(ptr0->image, grayImageLeft, cv::COLOR_BGR2GRAY);
           cv::cvtColor(ptr1->image, grayImageRight, cv::COLOR_BGR2GRAY);
           
-          // cv::imshow("123",grayImageRight);
-          // cv::imshow("456",grayImageLeft);
           /*重制图像话题为深度图 重制camerainfo 用于生成深度图*/
           sensor_msgs::ImagePtr gray_left_msg = cv_bridge::CvImage(color_msg0->header, "mono8", grayImageLeft).toImageMsg();
           gray_left_pub.publish(gray_left_msg);
@@ -146,17 +144,19 @@ int main(int argc, char** argv)
             drone_odom.header.frame_id = "world";
             drone_odom.header.stamp = color_msg0->header.stamp;
             drone_odom.pose.pose.position.x = drone0.drone_poses_true->position.x;
-            drone_odom.pose.pose.position.y = drone0.drone_poses_true->position.y;
+            drone_odom.pose.pose.position.y = -drone0.drone_poses_true->position.y;
             drone_odom.pose.pose.position.z = -drone0.drone_poses_true->position.z;
             drone_odom.pose.pose.orientation.w = drone0.drone_poses_true->orientation.w;
             drone_odom.pose.pose.orientation.x = drone0.drone_poses_true->orientation.x;
-            drone_odom.pose.pose.orientation.y = drone0.drone_poses_true->orientation.y;
-            drone_odom.pose.pose.orientation.z = drone0.drone_poses_true->orientation.z;
-            tf::Quaternion quat;
-            tf::quaternionMsgToTF(drone_odom.pose.pose.orientation, quat);
-            double roll, pitch, yaw;//定义存储r\p\y的容器
-            tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);//进行转换
-            
+            drone_odom.pose.pose.orientation.y = -drone0.drone_poses_true->orientation.y;
+            drone_odom.pose.pose.orientation.z = -drone0.drone_poses_true->orientation.z;
+
+          tf::Quaternion quat;
+          tf::quaternionMsgToTF(drone0.drone_poses_true->orientation, quat);
+          double roll, pitch, yaw;//定义存储r\p\y的容器
+          tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);//进行转换
+          // ROS_ERROR("TRUEO:%f,%f,%f", roll,pitch,yaw);
+          
             drone_true_odom_pub.publish(drone_odom);
           }
 
@@ -189,8 +189,6 @@ int main(int argc, char** argv)
           rosDepthImage->header.frame_id = "camera_depth";
           stereo_pub.publish(rosDepthImage);
 
-          //left:ptr->image    right:ptr->right     cv::Mat
-          std::vector<cv::Point>  detect_result;
           // Yolo yolo("yolov5n.trt");
           // cnt_j++;
           // if(cnt_j > 5) {
@@ -199,9 +197,16 @@ int main(int argc, char** argv)
           //   cnt_i++;
           //   cv::imwrite(name, ptr1->image);
           // }
-          
-          detect_result = yolo_detect.detect(ptr1->image);
-          std::cout<< detect_result << std::endl;
+
+          drone0.circle_detect_msg.clear();
+          std::vector<float> detect_temp0,detect_temp1; //目标检测模块返回vector<float> 左上角x坐标、左上角y坐标、宽度、高度、类别名
+          detect_temp0 = yolo_detect.detect(ptr0->image);
+          drone0.circle_detect_msg.push_back(detect_temp0);
+          detect_temp1 = yolo_detect.detect(ptr1->image);
+          drone0.circle_detect_msg.push_back(detect_temp1);
+          drone0.image_left  = ptr0->image;
+          drone0.image_right = ptr1->image;
+
         // }
       }
       // if(!gps_buf.empty()) {
@@ -270,6 +275,35 @@ cv::Mat getDepthFromStereo(const cv::Mat& img_left, const cv::Mat& img_right, co
   cv::Mat disp8U = cv::Mat(disparity_sgbm.rows, disparity_sgbm.cols, CV_8UC1); // 创建一个用于显示的16位无符号整型cv::Mat对象
   // disparity_sgbm.convertTo(disp8U, CV_8UC1); // 将视差图转换为8位无符号整型
   disparity.convertTo(disp8U,CV_8UC1);
+
+  // float fy = 320.0,cx = 320.0,cy = 240.0;
+  // pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+	// for (int v = 0; v < img_left.rows; v++)
+	// {
+	// 	for (int u = 0; u < img_left.cols; u++)
+	// 	{
+	// 		if (disparity.at<float>(v, u) <= 10 || disparity.at<float>(v, u) >= 96) continue;
+	// 		pcl::PointXYZRGB point;
+	// 		double x = (u - cx) / fx;
+	// 		double y = (v - cy) / fy;
+	// 		double depth = fx * baseline / (disparity.at<float>(v, u));
+	// 		point.x = x * depth;
+	// 		point.y = y * depth;
+	// 		point.z = depth;
+	// 		point.b = img_left.at<cv::Vec3b>(v, u)[0];
+	// 		point.g = img_left.at<cv::Vec3b>(v, u)[1];
+	// 		point.r = img_left.at<cv::Vec3b>(v, u)[2];
+	// 		pointcloud->push_back(point);
+	// 	}
+	// }
+  // pcl::visualization::PCLVisualizer visualizer("showcloud");
+  // while (!visualizer.wasStopped()) {
+  //   visualizer.removeAllPointClouds();
+	//   visualizer.addPointCloud(pointcloud);
+	//   visualizer.spinOnce();
+  // }
+  // cv::imshow("disparity", disparity);
+  // cv::waitKey(1);
 
   cv::Mat depthMap16U = cv::Mat::zeros(disp8U.size(), CV_16UC1); //深度图输出是CV_16UC1
   int height = disp8U.rows;

@@ -50,7 +50,7 @@ class Logger : public ILogger {
 class Yolo {
  public:
   Yolo(char* model_path);
-  std::vector<cv::Point>  detect(cv::Mat image);
+  std::vector<float>  detect(cv::Mat image);
   cv::Point getCenterPoint(cv::Rect rect);
   float letterbox(
       const cv::Mat& image,

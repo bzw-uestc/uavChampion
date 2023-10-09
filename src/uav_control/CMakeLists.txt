@@ -6,6 +6,7 @@ project(uav_control)
 set(OpenCV_DIR /usr/local)
 find_package(OpenCV 4.5.5 REQUIRED)
 message(--------------------------------------------------${OpenCV_INCLUDE_DIRS})
+find_package(PCL REQUIRED)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages

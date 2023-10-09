@@ -114,15 +114,16 @@ std::vector<cv::Point> Yolo::draw_objects(const cv::Mat& img, float* Boxes, int*
         cv::FONT_HERSHEY_PLAIN,
         1.2,
         cv::Scalar(0xFF, 0xFF, 0xFF),
-        2);
-        
+        2); 
     
     center = getCenterPoint(rect);
+    cv::circle(img, center, 3, cv::Scalar(0, 255, 120), -1);
     centerbox.push_back(center);
+
     std::cout<< BboxNum[0] << std::endl;
   }
-  // cv::imshow("result", img);
-  // cv::waitKey(1);
+  cv::imshow("result", img);
+  cv::waitKey(1);
 
   return centerbox;
 }
@@ -132,7 +133,7 @@ cv::Point Yolo::getCenterPoint(cv::Rect rect){
   cpt.x = rect.x + cvRound(rect.width/2.0);  
   cpt.y = rect.y + cvRound(rect.height/2.0);
   
-  return cpt; 
+  return cpt;
 }
 
 Yolo::Yolo(char* model_path) {
@@ -311,7 +312,7 @@ Yolo::~Yolo() {
   runtime->destroy();
 }
 
-std::vector<cv::Point>  Yolo::detect(cv::Mat image) {
+std::vector<float>  Yolo::detect(cv::Mat image) {
   if (!image.empty()) {
     // char* model_path = "yolov5n.trt";
     float* Boxes = new float[4000];
@@ -325,10 +326,18 @@ std::vector<cv::Point>  Yolo::detect(cv::Mat image) {
     auto end = std::chrono::system_clock::now();
     std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
 
-    center = draw_objects(image, Boxes, ClassIndexs, BboxNum);
+    // center = draw_objects(image, Boxes, ClassIndexs, BboxNum);
 
-    return center;
-  } 
+    std::vector<float> objects;
+    for (int j = 0; j < BboxNum[0]; j++) {
+      objects.push_back((int)Boxes[j * 4]);
+      objects.push_back((int)Boxes[j * 4 + 1]);
+      objects.push_back((int)Boxes[j * 4 + 2]);
+      objects.push_back((int)Boxes[j * 4 + 3]);
+      objects.push_back(ClassIndexs[j]);
+    }
+    return objects;
+  }
   else {
     std::cerr << "--> arguments not right!" << std::endl;
     std::cerr << "--> yolo -model_path ./output.trt -image_path ./demo.jpg" << std::endl;

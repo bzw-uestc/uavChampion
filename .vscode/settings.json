@@ -1,4 +1,6 @@
 {
+    "editor.fontSize": 12,
+    "window.zoomLevel": 0.5,
     "cmake.sourceDirectory": "/home/uestc/bzw_ws/UAVChampion/fast-drone_ws/src",
     "files.associations": {
         "ostream": "cpp",
@@ -72,6 +74,12 @@
         "variant": "cpp",
         "bit": "cpp",
         "*.ipp": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "codecvt": "cpp",
+        "__nullptr": "cpp",
+        "__config": "cpp",
+        "__preprocessor": "cpp",
+        "ios": "cpp",
+        "__locale": "cpp"
     }
 }

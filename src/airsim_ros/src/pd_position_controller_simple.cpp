@@ -40,9 +40,9 @@ void PIDPositionController::initialize_ros()
     // airsim_vel_cmd_world_frame_pub_ = nh_.advertise<airsim_ros::VelCmd>("/airsim_node/drone_1/vel_cmd_world_frame", 1);
     airsim_vel_cmd_body_frame_pub_ = nh_.advertise<airsim_ros::VelCmd>("/airsim_node/drone_1/vel_cmd_body_frame", 1);
     // ROS subscribers
-    airsim_odom_sub_ = nh_.subscribe("/airsim_node/drone_1/debug/pose_gt", 50, &PIDPositionController::airsim_odom_cb, this);
-    // visual_odom_sub_ = nh_.subscribe("/vins_fusion/imu_propagate", 50, &PIDPositionController::visual_odom_cb, this);
-    //home_geopoint_sub_ = nh_.subscribe("/airsim_node/home_geo_point", 50, &PIDPositionController::home_geopoint_cb, this);
+    // airsim_odom_sub_ = nh_.subscribe("/airsim_node/drone_1/debug/pose_gt", 50, &PIDPositionController::airsim_odom_cb, this);
+    visual_odom_sub_ = nh_.subscribe("/vins_fusion/imu_propagate_for_pd", 50, &PIDPositionController::visual_odom_cb, this);
+    // home_geopoint_sub_ = nh_.subscribe("/airsim_node/home_geo_point", 50, &PIDPositionController::home_geopoint_cb, this);
     // todo publish this under global nodehandle / "airsim node" and hide it from user
     local_position_goal_srvr_ = nh_.advertiseService("/airsim_node/local_position_goal", &PIDPositionController::local_position_goal_srv_cb, this);
     local_position_goal_override_srvr_ = nh_.advertiseService("/airsim_node/local_position_goal/override", &PIDPositionController::local_position_goal_srv_override_cb, this);
@@ -77,10 +77,10 @@ void PIDPositionController::visual_odom_cb(const nav_msgs::Odometry& odom_msg)
     // curr_odom_ = odom_msg;
     curr_position_.x = odom_msg.pose.pose.position.x;
     curr_position_.y = odom_msg.pose.pose.position.y;
-    curr_position_.z = -odom_msg.pose.pose.position.z;
+    curr_position_.z = odom_msg.pose.pose.position.z;
     curr_position_.yaw = utils::get_yaw_from_quat_msg(odom_msg.pose.pose.orientation);
     // ROS_INFO("%f %f %f %f", odom_msg.orientation.w, odom_msg.orientation.x,odom_msg.orientation.y,odom_msg.orientation.z);
-    // ROS_INFO("GET pose %f %f %f %f", odom_msg.position.x, odom_msg.position.y, odom_msg.position.z, curr_position_.yaw);
+    // ROS_ERROR("GET pose %f %f %f %f", curr_position_.x, curr_position_.y, curr_position_.z, curr_position_.yaw);
 }
 
 // todo maintain internal representation as eigen vec?
@@ -240,6 +240,8 @@ void PIDPositionController::enforce_dynamic_constraints()
 
 void PIDPositionController::publish_control_cmd()
 {
+    // vel_cmd_.twist.linear.x = -vel_cmd_.twist.linear.x;
+    // vel_cmd_.twist.linear.y = -vel_cmd_.twist.linear.y;
     airsim_vel_cmd_body_frame_pub_.publish(vel_cmd_);
     ROS_INFO("velcmd: %f %f %f %f", vel_cmd_.twist.linear.x, vel_cmd_.twist.linear.y, vel_cmd_.twist.linear.z, vel_cmd_.twist.angular.z);
 }
