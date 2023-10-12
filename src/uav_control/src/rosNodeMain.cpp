@@ -205,12 +205,27 @@ int main(int argc, char** argv)
           //   cv::imwrite(name, ptr1->image);
           // }
 
+          // drone0.circle_detect_msg.clear();
+          // std::vector<float> detect_temp0,detect_temp1; //目标检测模块返回vector<float> 左上角x坐标、左上角y坐标、宽度、高度、类别名
+          // detect_temp0 = yolo_detect.detect(ptr0->image);
+          // drone0.circle_detect_msg.push_back(detect_temp0);
+          
+          // detect_temp1 = yolo_detect.detect(ptr1->image);
+          // drone0.circle_detect_msg.push_back(detect_temp1);
+          // drone0.image_left  = ptr0->image;
+          // drone0.image_right = ptr1->image;
+          // auto end = std::chrono::system_clock::now();
+          // int time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+          // ROS_ERROR("%dms",time);
+
+
           drone0.circle_detect_msg.clear();
-          std::vector<float> detect_temp0,detect_temp1; //目标检测模块返回vector<float> 左上角x坐标、左上角y坐标、宽度、高度、类别名
-          detect_temp0 = yolo_detect.detect(ptr0->image);
-          drone0.circle_detect_msg.push_back(detect_temp0);
-          detect_temp1 = yolo_detect.detect(ptr1->image);
-          drone0.circle_detect_msg.push_back(detect_temp1);
+          drone0.circle_detect_msg = yolo_detect.detect(ptr0->image, ptr1->image); //目标检测模块返回vector<float> 左上角x坐标、左上角y坐标、宽度、高度、类别名
+          // for(int i = 0; i < drone0.circle_detect_msg.size(); i++) {
+          //   for(int j = 0; j < drone0.circle_detect_msg[i].size(); j++) {
+          //     ROS_ERROR("%f",drone0.circle_detect_msg[i][j]);
+          //   }
+          // }
           drone0.image_left  = ptr0->image;
           drone0.image_right = ptr1->image;
           auto end = std::chrono::system_clock::now();

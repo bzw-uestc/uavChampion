@@ -51,7 +51,7 @@ class Logger : public ILogger {
 class Yolo {
  public:
   Yolo(char* model_path);
-  std::vector<float>  detect(cv::Mat image);
+  std::vector<std::vector<float>>  detect(cv::Mat image1, cv::Mat image2);
   cv::Point getCenterPoint(cv::Rect rect);
   float letterbox(
       const cv::Mat& image,
@@ -61,18 +61,18 @@ class Yolo {
       const cv::Scalar& color,
       bool fixed_shape,
       bool scale_up);
-  float* blobFromImage(cv::Mat& img);
-  std::vector<cv::Point> draw_objects(const cv::Mat& img, float* Boxes, int* ClassIndexs, int* BboxNum);
+  float* blobFromImage(cv::Mat& img1, cv:: Mat& img2);
+  std::vector<cv::Point> draw_objects(const cv::Mat img[2], float* Boxes[2], int* ClassIndexs[2], int* BboxNum[2]);
   void Init(char* model_path);
   ~Yolo();
   void Infer(
       int aWidth,
       int aHeight,
       int aChannel,
-      unsigned char* aBytes,
-      float* Boxes,
-      int* ClassIndexs,
-      int* BboxNum);
+      unsigned char* aBytes[2],
+      float* Boxes[2],
+      int* ClassIndexs[2],
+      int* BboxNum[2]);
   int flag(){
     if (engine==nullptr){
         return 1;
