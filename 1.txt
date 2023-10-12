@@ -1,0 +1,2 @@
+sudo docker run -it --net host  -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY=$DISPLAY --gpus all --name urobot-opencv-gpu --rm urobot-opencv-gpu
+sudo docker build -t urobot-opencv-gpu .

@@ -215,7 +215,7 @@ int main(int argc, char** argv)
           drone0.image_right = ptr1->image;
           auto end = std::chrono::system_clock::now();
           int time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-          ROS_ERROR("%dms",time);
+          // ROS_ERROR("%dms",time);
         }
       }
       // if(!gps_buf.empty()) {

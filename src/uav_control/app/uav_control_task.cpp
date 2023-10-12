@@ -9,7 +9,7 @@ void uavControl::uavControlTask(void) {
     else if(!odom_init_flag) {
         double now = ros::Time::now().toSec();
         double dt = now - odom_init_start_time;
-        mid_point_flag = false;
+        mid_point_flag = true;
         if(dt > 3) odom_init_flag=1;
     }
     else if(!takeoff_flag) {
@@ -17,32 +17,47 @@ void uavControl::uavControlTask(void) {
         takeoff_flag = sim_takeoff_client.call(sim_takeoff);
     }
     else if(circle_msg_flag) { //circle_msg_flag
-        double dx,dy,dz;
-        #ifdef DEBUGE1
-        dx = abs(circle_poses_true->poses.at(circle_num).position.x - drone_poses_true->position.x );
-        dy = abs(circle_poses_true->poses.at(circle_num).position.y - drone_poses_true->position.y );
-        dz = abs(circle_poses_true->poses.at(circle_num).position.z) - abs(drone_poses_true->position.z );
-        #else
-        // ROS_ERROR("ego_target_pose:%f,%f,%f",ego_target_pose.pose.position.x,ego_target_pose.pose.position.y,ego_target_pose.pose.position.z);
-        // ROS_ERROR("visual_pose:%f,%f,%f",visual_pose.pose.pose.position.x,visual_pose.pose.pose.position.y,visual_pose.pose.pose.position.z);
-        dx = abs(ego_target_pose.pose.position.x - visual_pose.pose.pose.position.x );
-        dy = abs(-ego_target_pose.pose.position.y - visual_pose.pose.pose.position.y );
-        dz = abs(-ego_target_pose.pose.position.z - visual_pose.pose.pose.position.z );
-        #endif
-        if(dx < 0.3 && dy < 0.3 && dz < 0.3)
-        {
-            if (mid_point_flag == false)
+        #ifdef TRUE_POSE_DEBUGE
+            double dx,dy,dz;
+            dx = abs(abs(ego_target_pose.pose.position.x) - abs(drone_poses_true->pose.position.x));
+            dy = abs(abs(ego_target_pose.pose.position.y) - abs(drone_poses_true->pose.position.y));
+            dz = abs(abs(ego_target_pose.pose.position.z) - abs(drone_poses_true->pose.position.z));
+            if(dx < 0.3 && dy < 0.3 && dz < 0.3)
             {
-                circle_num+=1;
-                visual_detect_flag = 0;
-                // mid_point_flag = true;
+                ros::Duration delay(2.0);
+                // 延时
+                delay.sleep();
+                if (mid_point_flag == false)
+                {
+                    
+                    circle_num+=1;
+                    visual_detect_flag = 0;
+                    mid_point_flag = true;
+                }
+                else{
+                    mid_point_flag = false;
+                }
             }
-            // else{
-            //     mid_point_flag = false;
-            // }
-            
-        }
-
+        #else
+            if(uav_reached_location(ego_target_pose,visual_pose,0.3,0.3))
+            {
+                // ros::Duration delay(4.0);
+                // // 延时
+                // delay.sleep();
+                pd_delay_flag = true;
+                if (mid_point_flag == false)
+                {
+                    circle_num+=1;
+                    visual_detect_flag = 0;
+                    mid_point_flag = true;
+                }
+                else{
+                    mid_point_flag = false;
+                }
+                
+            }
+        #endif
+        
         cv::Point3f circlePosition;
         if(!circle_detect_msg.empty()) { //当检测信息不为空时尝试恢复检测目标的3D坐标
             cv::Point3f upm = detectCirclePosion(UpperMidpoint);
@@ -67,40 +82,38 @@ void uavControl::uavControlTask(void) {
         }
         if(visual_detect_flag && (mid_point_flag == false)) { //进入视觉模式
             if(circlePosition.x!=0 && circlePosition.y!=0 && circlePosition.z!=0) {
-                ego_target_pose.pose.position.x = circlePosition.x;
-                ego_target_pose.pose.position.y = -circlePosition.y;
-                ego_target_pose.pose.position.z = circlePosition.z;
+                #ifdef TRUE_POSE_DEBUGE
+                    ego_target_pose.pose.position.x = circle_poses_true->poses.at(circle_num).position.x;
+                    ego_target_pose.pose.position.y = -circle_poses_true->poses.at(circle_num).position.y;
+                    ego_target_pose.pose.position.z = circle_poses_true->poses.at(circle_num).position.z;
+                #else
+                    ego_target_pose.pose.position.x = circlePosition.x;
+                    ego_target_pose.pose.position.y = -circlePosition.y;
+                    ego_target_pose.pose.position.z = circlePosition.z;
+                #endif
             }
         }
         else if ((visual_detect_flag == false) && (mid_point_flag == false)){
-            ego_target_pose.pose.position.x = circle_poses_ref->poses.at(circle_num).position.x ;
-            ego_target_pose.pose.position.y = -circle_poses_ref->poses.at(circle_num).position.y ;
-            ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z) ;
-            
-            double drone_roll = 0, drone_pitch = 0, drone_yaw = circle_poses_ref->poses.at(circle_num).yaw;
-            double c1 = cos(drone_roll / 2);
-            double s1 = sin(drone_roll / 2);
-            double c2 = cos(drone_pitch / 2);
-            double s2 = sin(drone_pitch / 2);
-            double c3 = cos(drone_yaw / 2);
-            double s3 = sin(drone_yaw / 2);
-            ego_target_pose.pose.orientation.w = c1 * c2 * c3 + s1 * s2 * s3;
-            ego_target_pose.pose.orientation.x = s1 * c2 * c3 - c1 * s2 * s3;
-            ego_target_pose.pose.orientation.y = c1 * s2 * c3 + s1 * c2 * s3;
-            ego_target_pose.pose.orientation.z = c1 * c2 * s3 - s1 * s2 * c3;
-        }
-        else{
-            // mid_point_flag = true;
-            if (circle_num == 0)
-            {
-                ego_target_pose.pose.position.x = 0;
-                ego_target_pose.pose.position.y = 0;
-                ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z);
-            }
-            else{
-                ego_target_pose.pose.position.x = (circle_poses_ref->poses.at(circle_num - 1).position.x + circle_poses_ref->poses.at(circle_num).position.x) / 2;
-                ego_target_pose.pose.position.y = -(circle_poses_ref->poses.at(circle_num - 1).position.y + circle_poses_ref->poses.at(circle_num).position.y ) / 2;
+            #ifdef TRUE_POSE_DEBUGE
+                ego_target_pose.pose.position.x = circle_poses_true->poses.at(circle_num).position.x;
+                ego_target_pose.pose.position.y = -circle_poses_true->poses.at(circle_num).position.y;
+                ego_target_pose.pose.position.z = abs(circle_poses_true->poses.at(circle_num).position.z);
+                double drone_roll = 0, drone_pitch = 0, drone_yaw = circle_poses_true->poses.at(circle_num).yaw;
+                double c1 = cos(drone_roll / 2);
+                double s1 = sin(drone_roll / 2);
+                double c2 = cos(drone_pitch / 2);
+                double s2 = sin(drone_pitch / 2);
+                double c3 = cos(drone_yaw / 2);
+                double s3 = sin(drone_yaw / 2);
+                ego_target_pose.pose.orientation.w = c1 * c2 * c3 + s1 * s2 * s3;
+                ego_target_pose.pose.orientation.x = s1 * c2 * c3 - c1 * s2 * s3;
+                ego_target_pose.pose.orientation.y = c1 * s2 * c3 + s1 * c2 * s3;
+                ego_target_pose.pose.orientation.z = c1 * c2 * s3 - s1 * s2 * c3;
+            #else
+                ego_target_pose.pose.position.x = circle_poses_ref->poses.at(circle_num).position.x ;
+                ego_target_pose.pose.position.y = -circle_poses_ref->poses.at(circle_num).position.y ;
                 ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z) ;
+                
                 double drone_roll = 0, drone_pitch = 0, drone_yaw = circle_poses_ref->poses.at(circle_num).yaw;
                 double c1 = cos(drone_roll / 2);
                 double s1 = sin(drone_roll / 2);
@@ -112,14 +125,57 @@ void uavControl::uavControlTask(void) {
                 ego_target_pose.pose.orientation.x = s1 * c2 * c3 - c1 * s2 * s3;
                 ego_target_pose.pose.orientation.y = c1 * s2 * c3 + s1 * c2 * s3;
                 ego_target_pose.pose.orientation.z = c1 * c2 * s3 - s1 * s2 * c3;
+            #endif
+        }
+        else{
+            mid_point_flag = true;
+            if (circle_num == 0)
+            {
+                ego_target_pose.pose.position.x = 0;
+                ego_target_pose.pose.position.y = 0;
+                ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z) + 2.0;
+            }
+            else{
+                #ifdef TRUE_POSE_DEBUGE
+                    ego_target_pose.pose.position.x = (circle_poses_true->poses.at(circle_num - 1).position.x + circle_poses_true->poses.at(circle_num).position.x) / 2;
+                    ego_target_pose.pose.position.y = -(circle_poses_true->poses.at(circle_num - 1).position.y + circle_poses_true->poses.at(circle_num).position.y ) / 2;
+                    ego_target_pose.pose.position.z = abs(circle_poses_true->poses.at(circle_num).position.z) ;
+                    double drone_roll = 0, drone_pitch = 0, drone_yaw = circle_poses_true->poses.at(circle_num).yaw;
+                    double c1 = cos(drone_roll / 2);
+                    double s1 = sin(drone_roll / 2);
+                    double c2 = cos(drone_pitch / 2);
+                    double s2 = sin(drone_pitch / 2);
+                    double c3 = cos(drone_yaw / 2);
+                    double s3 = sin(drone_yaw / 2);
+                    ego_target_pose.pose.orientation.w = c1 * c2 * c3 + s1 * s2 * s3;
+                    ego_target_pose.pose.orientation.x = s1 * c2 * c3 - c1 * s2 * s3;
+                    ego_target_pose.pose.orientation.y = c1 * s2 * c3 + s1 * c2 * s3;
+                    ego_target_pose.pose.orientation.z = c1 * c2 * s3 - s1 * s2 * c3;
+                #else
+                    ego_target_pose.pose.position.x = (circle_poses_ref->poses.at(circle_num - 1).position.x + circle_poses_ref->poses.at(circle_num).position.x) / 2;
+                    ego_target_pose.pose.position.y = -(circle_poses_ref->poses.at(circle_num - 1).position.y + circle_poses_ref->poses.at(circle_num).position.y ) / 2;
+                    ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z) - 0.5;
+                    double drone_roll = 0, drone_pitch = 0, drone_yaw = circle_poses_ref->poses.at(circle_num).yaw;
+                    double c1 = cos(drone_roll / 2);
+                    double s1 = sin(drone_roll / 2);
+                    double c2 = cos(drone_pitch / 2);
+                    double s2 = sin(drone_pitch / 2);
+                    double c3 = cos(drone_yaw / 2);
+                    double s3 = sin(drone_yaw / 2);
+                    ego_target_pose.pose.orientation.w = c1 * c2 * c3 + s1 * s2 * s3;
+                    ego_target_pose.pose.orientation.x = s1 * c2 * c3 - c1 * s2 * s3;
+                    ego_target_pose.pose.orientation.y = c1 * s2 * c3 + s1 * c2 * s3;
+                    ego_target_pose.pose.orientation.z = c1 * c2 * s3 - s1 * s2 * c3;
+                #endif
+               
             }
             
         }
         ego_target_pose.header.frame_id = "world";
-        ego_target_pose.pose.orientation.w = 1;
-        ego_target_pose.pose.orientation.x = 0;
-        ego_target_pose.pose.orientation.y = 0;
-        ego_target_pose.pose.orientation.z = 0;
+        // ego_target_pose.pose.orientation.w = 1;
+        // ego_target_pose.pose.orientation.x = 0;
+        // ego_target_pose.pose.orientation.y = 0;
+        // ego_target_pose.pose.orientation.z = 0;
         ego_goal_point_pub.publish(ego_target_pose);
         // ROS_ERROR("circle:%f,%f,%f",visual_pose.pose.pose.position.x ,visual_pose.pose.pose.position.y,visual_pose.pose.pose.position.z);
         
@@ -139,6 +195,12 @@ void uavControl::uavControlTask(void) {
             
             
             #ifdef PD_DEBUGE
+                if(pd_delay_flag)
+                {
+                    ros::Duration delay(2);
+                    delay.sleep();
+                    pd_delay_flag = false;
+                }
                 posCmd.request.x = posture_cmd.x;
                 posCmd.request.y = -posture_cmd.y;
                 posCmd.request.z = -posture_cmd.z;
@@ -151,7 +213,6 @@ void uavControl::uavControlTask(void) {
                 poseCmd.yaw = posture_cmd.yaw;
                 poseCmd.roll = posture_cmd.yaw;
                 poseCmd.pitch = posture_cmd.yaw;
-                
                 drone_vel_pub.publish(velCmd);
                 drone_pose_pub.publish(poseCmd);
             #endif
@@ -335,10 +396,10 @@ cv::Point3f uavControl::detectCirclePosion(SelectPoint p)
 
             
 
-        // visual_detect_flag = 0;
         // ROS_ERROR("squaremax:%f,%f",circleSquareMax[0],circleSquareMax[1]);
         // ROS_ERROR("square:%f,%f,%f,%f,%f",circle_detect_msg[0],circle_detect_msg[1],circle_detect_msg[2],circle_detect_msg[3],circle_detect_msg[4]);
-        if (circleSquareMax[0] > 3000.0 && circleSquareMax[1] > 3000.0 && circleSquareMax[0] < 10000.0 && circleSquareMax[1] < 10000.0) {  //矩形面积大于4000时计算矩形框内像素点的3D空间坐标位置
+        if (circleSquareMax[0] > 2500.0 && circleSquareMax[1] > 2500.0 && circleSquareMax[0] < 10000.0 && circleSquareMax[1] < 10000.0 
+            && uav_reached_location(ego_target_pose,visual_pose,7.0,7.0)) {  //矩形面积大于4000时计算矩形框内像素点的3D空间坐标位置
             // ORBPointsMathch(image_left,image_right,circle_detect_msg[0]);  //该方法先不用 等我回来调试
             visual_detect_flag = 1;
             int x1_left, y1_left, x1_right, y1_right;
@@ -440,7 +501,6 @@ cv::Point3f uavControl::detectCirclePosion(SelectPoint p)
             // listener.transformPoint("world", point_camera, point_world);
             
             if(worldPoint.x <10.0 && worldPoint.y <10.0 && worldPoint.z <10.0) {
-            
                 // ROS_INFO("Point in camera frame: (%.2f, %.2f, %.2f)", point_camera.point.x, point_camera.point.y, point_camera.point.z);
                 // ROS_ERROR("Point in world frame: (%.2f, %.2f, %.2f)", point_world.point.x, point_world.point.y, point_world.point.z);
                 /*获取视觉里程计到世界坐标系的变换矩阵*/
@@ -609,7 +669,8 @@ cv::Point3f uv2xyz(cv::Point2f uvLeft, cv::Point2f uvRight)
 	cv::Point3f world;
 	world.x = XYZ.at<float>(0, 0);
 	world.y = XYZ.at<float>(1, 0);
-	world.z = XYZ.at<float>(2, 0) + 1.0; //穿过圆环 距离+1.0
+    world.z = XYZ.at<float>(2, 0);
+	// world.z = XYZ.at<float>(2, 0) + 1.0; //穿过圆环 距离+1.0
 
 	return world;
 }
@@ -659,4 +720,15 @@ std::vector<cv::Point2f> ORBPointsMathch(cv::Mat& image_left, cv::Mat& image_rig
     cv::imshow("Matches", output_image);
     cv::waitKey(0); // 等待按键事件
     return matched_points;
+}
+
+bool uavControl::uav_reached_location(geometry_msgs::PoseStamped ref,nav_msgs::Odometry fdb,double distance_dxy,double distance_dz) {
+    double dx,dy,dz;
+    dx = abs(ref.pose.position.x - fdb.pose.pose.position.x );
+    dy = abs(-ref.pose.position.y - fdb.pose.pose.position.y );
+    dz = abs(-ref.pose.position.z - fdb.pose.pose.position.z );
+    if(dx < distance_dxy && dy < distance_dxy && dz < distance_dz) {
+        return true;
+    }
+    return false;
 }

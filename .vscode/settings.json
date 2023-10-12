@@ -83,6 +83,7 @@
         "__locale": "cpp",
         "slist": "cpp",
         "scoped_allocator": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "__node_handle": "cpp"
     }
 }

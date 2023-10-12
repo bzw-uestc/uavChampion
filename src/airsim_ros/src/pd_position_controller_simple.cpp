@@ -1,4 +1,5 @@
 #include "pd_position_controller_simple.h"
+// #include "../../uav_control/app/uav_control_task.hpp"
 
 bool DynamicConstraints::load_from_rosparams(const ros::NodeHandle& nh)
 {
@@ -40,8 +41,11 @@ void PIDPositionController::initialize_ros()
     // airsim_vel_cmd_world_frame_pub_ = nh_.advertise<airsim_ros::VelCmd>("/airsim_node/drone_1/vel_cmd_world_frame", 1);
     airsim_vel_cmd_body_frame_pub_ = nh_.advertise<airsim_ros::VelCmd>("/airsim_node/drone_1/vel_cmd_body_frame", 1);
     // ROS subscribers
-    // airsim_odom_sub_ = nh_.subscribe("/airsim_node/drone_1/debug/pose_gt", 50, &PIDPositionController::airsim_odom_cb, this);
-    visual_odom_sub_ = nh_.subscribe("/vins_fusion/imu_propagate_for_pd", 50, &PIDPositionController::visual_odom_cb, this);
+    #ifdef TRUE_POSE_DEBUGE
+        airsim_odom_sub_ = nh_.subscribe("/airsim_node/drone_1/debug/pose_gt", 50, &PIDPositionController::airsim_odom_cb, this);
+    #else
+      visual_odom_sub_ = nh_.subscribe("/vins_fusion/imu_propagate_for_pd", 50, &PIDPositionController::visual_odom_cb, this);
+    #endif
     //home_geopoint_sub_ = nh_.subscribe("/airsim_node/home_geo_point", 50, &PIDPositionController::home_geopoint_cb, this);
     // todo publish this under global nodehandle / "airsim node" and hide it from user
     local_position_goal_srvr_ = nh_.advertiseService("/airsim_node/local_position_goal", &PIDPositionController::local_position_goal_srv_cb, this);

@@ -30,6 +30,7 @@
 
 // #define TF_DEBUG
 #define PD_DEBUGE
+// #define TRUE_POSE_DEBUGE
 // #define DEBUGE1
 #define ObstacleCircleRadius 0.75
 #define ObstacleCircleNum    17
@@ -73,6 +74,7 @@ private:
     bool visual_detect_flag = 0;
     bool ego_receive_flag = 0;
     bool mid_point_flag = 0;
+    bool pd_delay_flag = 0;
     double odom_init_start_time; //仿真器复位后的时间，里程计开始初始化的时间
     void uavSetGoalPostion(void);
     void circlePosesRef_callBack(const airsim_ros::CirclePosesConstPtr& circle);
@@ -84,7 +86,7 @@ private:
     void dronePosesTrue_callBack(const geometry_msgs::PoseStampedConstPtr& drone_poses);
     void droneVisualPose_callBack(const nav_msgs::Odometry& drone_vins_poses);
     cv::Point3f detectCirclePosion(SelectPoint p);
-    
+    bool uav_reached_location(geometry_msgs::PoseStamped ref,nav_msgs::Odometry fdb,double distance_dxy,double distance_dz);
 public:
     uavControl(ros::NodeHandle& nh);
     ~uavControl(){}
@@ -97,4 +99,5 @@ public:
 
 cv::Point3f uv2xyz(cv::Point2f uvLeft, cv::Point2f uvRight);
 std::vector<cv::Point2f> ORBPointsMathch(cv::Mat& image_left, cv::Mat& image_right, std::vector<float>& ROI);
+
 #endif
