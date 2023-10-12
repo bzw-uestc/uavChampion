@@ -1,6 +1,7 @@
 #ifndef _CIRCLEDETECT_H
 #define _CIRCLEDETECT_H
 
+#include <ros/ros.h>
 #include <opencv2/opencv.hpp>
 #include <math.h>
 #include <array>

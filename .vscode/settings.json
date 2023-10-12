@@ -80,6 +80,9 @@
         "__config": "cpp",
         "__preprocessor": "cpp",
         "ios": "cpp",
-        "__locale": "cpp"
+        "__locale": "cpp",
+        "slist": "cpp",
+        "scoped_allocator": "cpp",
+        "filesystem": "cpp"
     }
 }

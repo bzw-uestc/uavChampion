@@ -81,7 +81,7 @@ private:
     void egoPosCmd_callBack(const quadrotor_msgs::PositionCommand& pos_cmds);
     void pdVelPose_callBack(const airsim_ros::VelCmdPtr& pdVel);
     // void egoPath_callBack(const visualization_msgs::Marker& pos_cmds);
-    void dronePosesTrue_callBack(const geometry_msgs::PoseConstPtr& drone_poses);
+    void dronePosesTrue_callBack(const geometry_msgs::PoseStampedConstPtr& drone_poses);
     void droneVisualPose_callBack(const nav_msgs::Odometry& drone_vins_poses);
     cv::Point3f detectCirclePosion(SelectPoint p);
     
@@ -90,7 +90,7 @@ public:
     ~uavControl(){}
     int drone_pose_true_flag = 0;
     std::vector<std::vector<float>> circle_detect_msg;  //外部vector 0存放左目结果 1存放右目结果
-    geometry_msgs::PoseConstPtr drone_poses_true; //仿真器无人机真实位姿
+    geometry_msgs::PoseStampedConstPtr drone_poses_true; //仿真器无人机真实位姿
     cv::Mat image_left,image_right; //无人机搭载的双目图像 外部传进来
     void uavControlTask(void);
 };

@@ -5,13 +5,16 @@ project(uav_control)
 # add_compile_options(-std=c++11)
 set(OpenCV_DIR /usr/local)
 find_package(OpenCV 4.5.5 REQUIRED)
+find_package(CUDA REQUIRED)
 message(--------------------------------------------------${OpenCV_INCLUDE_DIRS})
+message(--------------------------------------------------${CUDA_INCLUDE_DIRS})
+message(--------------------------------------------------${CUDA_LIBRARY_DIRS})
 find_package(PCL REQUIRED)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  cv_bridge
+  cv_bridge_455
   geometry_msgs
   nav_msgs
   pcl_ros
@@ -113,7 +116,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES uav_control
-  CATKIN_DEPENDS cv_bridge geometry_msgs nav_msgs pcl_ros quadrotor_msgs roscpp sensor_msgs std_srvs
+  CATKIN_DEPENDS cv_bridge_455 geometry_msgs nav_msgs pcl_ros quadrotor_msgs roscpp sensor_msgs std_srvs
 #  DEPENDS system_lib
 )
 
@@ -121,8 +124,9 @@ catkin_package(
 ## Build ##
 ###########
 
-
-
+set(tensorRT_DIR ${PROJECT_SOURCE_DIR}/../../lib/TensorRT-8.6.1.6)
+message(--------------------------------------------------${tensorRT_DIR})
+set(CUDA_LIB ${CUDA_INCLUDE_DIRS}/../lib64)
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
@@ -130,14 +134,14 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/include
-  /home/uestc/bzw_ws/UAVChampion/ego-planner/devel/include
-  /usr/local/cuda/include
-  /home/uestc/TensorRT-8.6.1.6/include
+  ${CUDA_INCLUDE_DIRS}
+  ${tensorRT_DIR}/include
   include)
   
-link_directories(/usr/local/cuda/lib64)
+#link_directories(${CUDA_LIB})
+link_directories(${CUDA_LIBRARY_DIRS})
 #tensorRT
-link_directories(/home/uestc/TensorRT-8.6.1.6/lib)
+link_directories(${tensorRT_DIR}/lib)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -169,9 +173,10 @@ target_link_libraries(${PROJECT_NAME}_node
    ${catkin_LIBRARIES}
    ${OpenCV_LIBRARIES}
    ${PCL_LIBRARIES}
+   ${CUDA_LIBRARIES}
    nvinfer
    nvinfer_plugin
-   cudart
+   #cudart
  )
 
 #############

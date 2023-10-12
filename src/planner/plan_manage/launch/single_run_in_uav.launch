@@ -59,11 +59,11 @@
         <arg name="point4_z" value="1.0" />
     </include>
     <!-- trajectory server -->
-    <node pkg="ego_planner" name="drone_$(arg drone_id)_traj_server" type="traj_server" output="screen">
+    <node pkg="ego_planner" name="drone_$(arg drone_id)_traj_server" type="traj_server" output="screen" respawn_delay="10">
         <!-- <remap from="position_cmd" to="/setpoints_cmd"/> -->
         <remap from="~planning/bspline" to="drone_$(arg drone_id)_planning/bspline"/>
         <param name="traj_server/time_forward" value="1.0" type="double"/>
     </node>
 
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find ego_planner)/launch/default.rviz" required="true" />
+   
 </launch>

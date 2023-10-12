@@ -1,0 +1,1 @@
+sudo docker run -it --net host  -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY=$DISPLAY --name my_ros_image2 --rm my_ros_image2

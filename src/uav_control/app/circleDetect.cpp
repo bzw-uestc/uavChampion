@@ -276,6 +276,9 @@ void Yolo::Infer(
     cout << "transmit to host failed \n";
     std::abort();
   }
+
+  cudaStreamSynchronize(stream);
+
   BboxNum[0] = num_dets[0];
   int img_w = img.cols;
   int img_h = img.rows;
@@ -321,11 +324,12 @@ std::vector<float>  Yolo::detect(cv::Mat image) {
     std::vector<cv::Point>  center;
     // Yolo yolo(model_path);
 
-    auto start = std::chrono::system_clock::now();
+    // auto start = std::chrono::system_clock::now();
     Infer(image.cols, image.rows, image.channels(), image.data, Boxes, ClassIndexs, BboxNum);
-    auto end = std::chrono::system_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
-
+    // auto end = std::chrono::system_clock::now();
+    // std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
+    // int time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    // ROS_ERROR("%dms",time);
     // center = draw_objects(image, Boxes, ClassIndexs, BboxNum);
 
     std::vector<float> objects;

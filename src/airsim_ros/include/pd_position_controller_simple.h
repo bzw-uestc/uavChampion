@@ -8,6 +8,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <math.h>
 #include <airsim_ros/VelCmd.h>
 #include <airsim_ros/SetLocalPosition.h>
@@ -57,7 +58,7 @@ public:
     double max_yaw_rate_degree;
 
     DynamicConstraints()
-        : max_vel_horz_abs(1.0), max_vel_vert_abs(1.0), max_yaw_rate_degree(1)  //2 2 30
+        : max_vel_horz_abs(1.0), max_vel_vert_abs(1.0), max_yaw_rate_degree(1)
     {
     }
 
@@ -76,7 +77,7 @@ public:
     bool gps_goal_srv_override_cb(airsim_ros::SetGPSPosition::Request& request, airsim_ros::SetGPSPosition::Response& response);
 
     // ROS subscriber callbacks
-    void airsim_odom_cb(const geometry_msgs::Pose& odom_msg);
+    void airsim_odom_cb(const geometry_msgs::PoseStamped& odom_msg);
     void visual_odom_cb(const nav_msgs::Odometry& odom_msg);
     //void home_geopoint_cb(const airsim_ros::GPSYaw& gps_msg);
 
@@ -109,7 +110,7 @@ private:
 
     double update_control_every_n_sec;
 
-    geometry_msgs::Pose curr_odom_;
+    geometry_msgs::PoseStamped curr_odom_;
     airsim_ros::VelCmd vel_cmd_;
     bool reached_goal_;
     bool has_goal_;

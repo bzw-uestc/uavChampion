@@ -3,7 +3,7 @@
 void uavControl::uavControlTask(void) {
     if(!reset_flag) { //!reset_flag
         sim_reset_client.call(sim_reset);   
-        reset_flag = sim_reset_client.call(sim_reset);
+        reset_flag = 1;
         odom_init_start_time = ros::Time::now().toSec();
     }
     else if(!odom_init_flag) {
@@ -213,9 +213,9 @@ void uavControl::uavSetGoalPostion(void) {
 
 }
 
-void uavControl::dronePosesTrue_callBack(const geometry_msgs::PoseConstPtr& drone_poses) {
+void uavControl::dronePosesTrue_callBack(const geometry_msgs::PoseStampedConstPtr& drone_poses) {
     drone_pose_true_flag = 1;
-
+    // ROS_ERROR("recive_circle");
     drone_poses_true = drone_poses;
     
     // ROS_ERROR("TRUE:%f,%f,%f, %f", drone_poses_true->orientation.w,drone_poses_true->orientation.x,drone_poses_true->orientation.y,drone_poses_true->orientation.z);
@@ -223,7 +223,6 @@ void uavControl::dronePosesTrue_callBack(const geometry_msgs::PoseConstPtr& dron
 
 void uavControl::circlePosesRef_callBack(const airsim_ros::CirclePosesConstPtr& circle_pose) {
     circle_poses_ref = circle_pose;
-    
     circle_msg_flag = 1;
     // std::cout << circle_poses_ref->poses.front().position.x << std::endl;
     // std::cout << circle_poses_ref->poses.front().position.y << std::endl;
@@ -339,7 +338,7 @@ cv::Point3f uavControl::detectCirclePosion(SelectPoint p)
         // visual_detect_flag = 0;
         // ROS_ERROR("squaremax:%f,%f",circleSquareMax[0],circleSquareMax[1]);
         // ROS_ERROR("square:%f,%f,%f,%f,%f",circle_detect_msg[0],circle_detect_msg[1],circle_detect_msg[2],circle_detect_msg[3],circle_detect_msg[4]);
-        if (circleSquareMax[0] > 3500.0 && circleSquareMax[1] > 3500.0 && circleSquareMax[0] < 12000.0 && circleSquareMax[1] < 12000.0){  //矩形面积大于4000时计算矩形框内像素点的3D空间坐标位置
+        if (circleSquareMax[0] > 3000.0 && circleSquareMax[1] > 3000.0 && circleSquareMax[0] < 10000.0 && circleSquareMax[1] < 10000.0) {  //矩形面积大于4000时计算矩形框内像素点的3D空间坐标位置
             // ORBPointsMathch(image_left,image_right,circle_detect_msg[0]);  //该方法先不用 等我回来调试
             visual_detect_flag = 1;
             int x1_left, y1_left, x1_right, y1_right;
@@ -361,10 +360,10 @@ cv::Point3f uavControl::detectCirclePosion(SelectPoint p)
                 worldPoint = worldPoint_upm;
                 // ROS_ERROR("point3D:%f,%f,%f",worldPoint_upm.x,worldPoint_upm.y,worldPoint_upm.z);
 
-                cv::Point point1_left(x1_left, y1_left);
-                cv::circle(image_left, point1_left, 3, cv::Scalar(0, 255, 120), -1);
-                cv::Point point1_right(x1_right, y1_right);
-                cv::circle(image_right, point1_right, 3, cv::Scalar(0, 255, 120), -1);
+                // cv::Point point1_left(x1_left, y1_left);
+                // cv::circle(image_left, point1_left, 3, cv::Scalar(0, 255, 120), -1);
+                // cv::Point point1_right(x1_right, y1_right);
+                // cv::circle(image_right, point1_right, 3, cv::Scalar(0, 255, 120), -1); //绘制关键点位置 DEBUG用
 
             }
             else if (p == LowerMidpoint)
@@ -380,11 +379,11 @@ cv::Point3f uavControl::detectCirclePosion(SelectPoint p)
                 worldPoint = worldPoint_lom;
 
 
-                cv::Point point1_left(x1_left, y1_left);
-                cv::circle(image_left, point1_left, 3, cv::Scalar(0, 255, 120), -1);
-                cv::Point point1_right(x1_right, y1_right);
-                cv::circle(image_right, point1_right, 3, cv::Scalar(0, 255, 120), -1);
-                
+                // cv::Point point1_left(x1_left, y1_left);
+                // cv::circle(image_left, point1_left, 3, cv::Scalar(0, 255, 120), -1);
+                // cv::Point point1_right(x1_right, y1_right);
+                // cv::circle(image_right, point1_right, 3, cv::Scalar(0, 255, 120), -1); //绘制关键点位置 DEBUG用
+
             }
             else if (p == LeftMidpoint)
             {
@@ -401,10 +400,10 @@ cv::Point3f uavControl::detectCirclePosion(SelectPoint p)
                 worldPoint = worldPoint_lem;
                 // ROS_ERROR("point3D:%f,%f,%f",worldPoint2.x,worldPoint2.y,worldPoint2.z);
 
-                cv::Point point1_left(x1_left, y1_left);
-                cv::circle(image_left, point1_left, 3, cv::Scalar(0, 255, 120), -1);
-                cv::Point point1_right(x1_right, y1_right);
-                cv::circle(image_right, point1_right, 3, cv::Scalar(0, 255, 120), -1);
+                // cv::Point point1_left(x1_left, y1_left);
+                // cv::circle(image_left, point1_left, 3, cv::Scalar(0, 255, 120), -1);
+                // cv::Point point1_right(x1_right, y1_right);
+                // cv::circle(image_right, point1_right, 3, cv::Scalar(0, 255, 120), -1); //绘制关键点位置 DEBUG用
             }
             else if (p == RightMidpoint)
             {
@@ -419,10 +418,10 @@ cv::Point3f uavControl::detectCirclePosion(SelectPoint p)
                 worldPoint_rim = uv2xyz(l, r);  //由左右目像素坐标恢复空间3D坐标
                 worldPoint = worldPoint_rim;
 
-                cv::Point point1_left(x1_left, y1_left);
-                cv::circle(image_left, point1_left, 3, cv::Scalar(0, 255, 120), -1);
-                cv::Point point1_right(x1_right, y1_right);
-                cv::circle(image_right, point1_right, 3, cv::Scalar(0, 255, 120), -1);
+                // cv::Point point1_left(x1_left, y1_left);
+                // cv::circle(image_left, point1_left, 3, cv::Scalar(0, 255, 120), -1);
+                // cv::Point point1_right(x1_right, y1_right);
+                // cv::circle(image_right, point1_right, 3, cv::Scalar(0, 255, 120), -1); 
             }
             // ROS_ERROR("x1_left:%d,y1_left:%d,x1_right:%d,y1_right:%d",x1_left,y1_left,x1_right,y1_right);
             // cv::imshow("result_left", image_left);
@@ -610,7 +609,7 @@ cv::Point3f uv2xyz(cv::Point2f uvLeft, cv::Point2f uvRight)
 	cv::Point3f world;
 	world.x = XYZ.at<float>(0, 0);
 	world.y = XYZ.at<float>(1, 0);
-	world.z = XYZ.at<float>(2, 0);
+	world.z = XYZ.at<float>(2, 0) + 1.0; //穿过圆环 距离+1.0
 
 	return world;
 }

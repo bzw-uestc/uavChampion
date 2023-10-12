@@ -42,7 +42,7 @@ void PIDPositionController::initialize_ros()
     // ROS subscribers
     // airsim_odom_sub_ = nh_.subscribe("/airsim_node/drone_1/debug/pose_gt", 50, &PIDPositionController::airsim_odom_cb, this);
     visual_odom_sub_ = nh_.subscribe("/vins_fusion/imu_propagate_for_pd", 50, &PIDPositionController::visual_odom_cb, this);
-    // home_geopoint_sub_ = nh_.subscribe("/airsim_node/home_geo_point", 50, &PIDPositionController::home_geopoint_cb, this);
+    //home_geopoint_sub_ = nh_.subscribe("/airsim_node/home_geo_point", 50, &PIDPositionController::home_geopoint_cb, this);
     // todo publish this under global nodehandle / "airsim node" and hide it from user
     local_position_goal_srvr_ = nh_.advertiseService("/airsim_node/local_position_goal", &PIDPositionController::local_position_goal_srv_cb, this);
     local_position_goal_override_srvr_ = nh_.advertiseService("/airsim_node/local_position_goal/override", &PIDPositionController::local_position_goal_srv_override_cb, this);
@@ -59,14 +59,14 @@ void PIDPositionController::initialize_ros()
 // }
 
 
-void PIDPositionController::airsim_odom_cb(const geometry_msgs::Pose& odom_msg)
+void PIDPositionController::airsim_odom_cb(const geometry_msgs::PoseStamped& odom_msg)
 {
     has_odom_ = true;
     curr_odom_ = odom_msg;
-    curr_position_.x = odom_msg.position.x;
-    curr_position_.y = odom_msg.position.y;
-    curr_position_.z = odom_msg.position.z;
-    curr_position_.yaw = utils::get_yaw_from_quat_msg(odom_msg.orientation);
+    curr_position_.x = odom_msg.pose.position.x;
+    curr_position_.y = odom_msg.pose.position.y;
+    curr_position_.z = odom_msg.pose.position.z;
+    curr_position_.yaw = utils::get_yaw_from_quat_msg(odom_msg.pose.orientation);
     // ROS_INFO("%f %f %f %f", odom_msg.orientation.w, odom_msg.orientation.x,odom_msg.orientation.y,odom_msg.orientation.z);
     // ROS_INFO("GET pose %f %f %f %f", odom_msg.position.x, odom_msg.position.y, odom_msg.position.z, curr_position_.yaw);
 }
@@ -153,6 +153,7 @@ bool PIDPositionController::local_position_goal_srv_override_cb(airsim_ros::SetL
     return response.success;
 }
 
+
 void PIDPositionController::update_control_cmd_timer_cb(const ros::TimerEvent& event)
 {
     // todo check if odometry is too old!!
@@ -165,12 +166,12 @@ void PIDPositionController::update_control_cmd_timer_cb(const ros::TimerEvent& e
     if (has_goal_) {
         check_reached_goal();
         if (reached_goal_) {
-            ROS_INFO("[PIDPositionController] Reached goal! Hovering at position.");
+            // ROS_INFO_STREAM("[PIDPositionController] Reached goal! Hovering at position.");
             has_goal_ = false;
             // dear future self, this function doesn't return coz we need to keep on actively hovering at last goal pose. don't act smart
         }
         else {
-            ROS_INFO("[PIDPositionController] Moving to goal.");
+            // ROS_INFO_STREAM("[PIDPositionController] Moving to goal.");
         }
     }
 
@@ -210,9 +211,9 @@ void PIDPositionController::compute_control_cmd()
 
     double yaw = curr_position_.yaw + update_control_every_n_sec/2*vyaw;
 
-    vel_cmd_.twist.linear.x  = cosf64(yaw)*vx+sinf64(yaw)*vy;
-    vel_cmd_.twist.linear.y  = -sinf64(yaw)*vx+cosf64(yaw)*vy;
-    vel_cmd_.twist.linear.z  = vz;
+    vel_cmd_.twist.linear.x = cosf64(yaw)*vx+sinf64(yaw)*vy;
+    vel_cmd_.twist.linear.y = -sinf64(yaw)*vx+cosf64(yaw)*vy;
+    vel_cmd_.twist.linear.z = vz;
     vel_cmd_.twist.angular.z = vyaw; // todo
 }
 
@@ -231,17 +232,15 @@ void PIDPositionController::enforce_dynamic_constraints()
         vel_cmd_.twist.linear.z = (vel_cmd_.twist.linear.z / std::fabs(vel_cmd_.twist.linear.z)) * constraints_.max_vel_vert_abs;
     }
     // todo yaw limits
-    if (std::fabs(vel_cmd_.twist.linear.z) > constraints_.max_yaw_rate_degree) {
+    if (std::fabs(vel_cmd_.twist.angular.z) > constraints_.max_yaw_rate_degree) {
         // todo just add a sgn funciton in common utils? return double to be safe.
         // template <typename T> double sgn(T val) { return (T(0) < val) - (val < T(0)); }
-        vel_cmd_.twist.linear.z = (vel_cmd_.twist.linear.z / std::fabs(vel_cmd_.twist.linear.z)) * constraints_.max_yaw_rate_degree;
+        vel_cmd_.twist.angular.z = (vel_cmd_.twist.angular.z / std::fabs(vel_cmd_.twist.angular.z)) * constraints_.max_yaw_rate_degree;
     }
 }
 
 void PIDPositionController::publish_control_cmd()
 {
-    // vel_cmd_.twist.linear.x = -vel_cmd_.twist.linear.x;
-    // vel_cmd_.twist.linear.y = -vel_cmd_.twist.linear.y;
     airsim_vel_cmd_body_frame_pub_.publish(vel_cmd_);
     ROS_INFO("velcmd: %f %f %f %f", vel_cmd_.twist.linear.x, vel_cmd_.twist.linear.y, vel_cmd_.twist.linear.z, vel_cmd_.twist.angular.z);
 }
