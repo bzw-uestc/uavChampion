@@ -112,7 +112,7 @@ acc_n: 4.3250138957392742e-01         # accelerometer measurement noise standard
 gyr_n: 1.5932354159147618e-02         # gyroscope measurement noise standard deviation.     #0.05  0.004
 acc_w: 2.4325208705370505e-05         # accelerometer bias random work noise standard deviation.  #0.002
 gyr_w: 1.3744681532786113e-06       # gyroscope bias random work noise standard deviation.     #4.0e-5
-g_norm: 9.89
+g_norm: 9.0
 
 #unsynchronization parameters
 estimate_td: 0                      # online estimate time offset between camera and imu

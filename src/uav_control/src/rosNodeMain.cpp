@@ -92,7 +92,7 @@ int main(int argc, char** argv)
   }
 
   uavControl drone0(nh);
-  ros::Rate uavControl_loop_rate(30);//设置循环频率，20Hz；也可以设为其他频率，如1为1Hz
+  ros::Rate uavControl_loop_rate(35);//设置循环频率，20Hz；也可以设为其他频率，如1为1Hz
   std::thread uavControl_thread([&]() {
     while (ros::ok()) {
       drone0.uavControlTask();

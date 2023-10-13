@@ -60,7 +60,7 @@ public:
     double max_yaw_rate_degree;
 
     DynamicConstraints()
-        : max_vel_horz_abs(1.0), max_vel_vert_abs(1.0), max_yaw_rate_degree(1)
+        : max_vel_horz_abs(1.7), max_vel_vert_abs(1.7), max_yaw_rate_degree(1)
     {
     }
 
