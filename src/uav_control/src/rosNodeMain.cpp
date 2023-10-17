@@ -128,7 +128,7 @@ int main(int argc, char** argv)
   // ros::Rate msgProcess_loop_rate(200);//设置循环频率，10Hz；也可以设为其他频率，如1为1Hz
   std::thread msgProcess_thread([&]() {
     while (ros::ok()) {
-      if(!img_buf0.empty() && !img_buf1.empty()) { //!img_buf0.empty() && !img_buf1.empty()   color_msg_left != nullptr && color_msg_right != nullptr
+      if(color_msg_left != nullptr && color_msg_right != nullptr) { //!img_buf0.empty() && !img_buf1.empty()   color_msg_left != nullptr && color_msg_right != nullptr
         auto start = std::chrono::system_clock::now();
         sensor_msgs::ImageConstPtr color_msg0 = nullptr;
         sensor_msgs::ImageConstPtr color_msg1 = nullptr;
