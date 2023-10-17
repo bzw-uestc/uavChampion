@@ -31,10 +31,15 @@ void uavControl::uavControlTask(void) {
                 cameraCirclePosition.y = (upm.y + lom.y + lem.y + rim.y) / 4;
                 cameraCirclePosition.z = (upm.z + lom.z + lem.z + rim.z) / 4;
                 ROS_ERROR("x:%f,y:%f,z:%f",cameraCirclePosition.x,cameraCirclePosition.y,cameraCirclePosition.z);
+<<<<<<< HEAD
                 if((abs(cameraCirclePosition.x) > 2.6 || abs(cameraCirclePosition.y) > 2.6 ) && cameraCirclePosition.z > 7.0) cameraCirclePosition.z -= 7.0;
                 else if((abs(cameraCirclePosition.x) > 2.6 || abs(cameraCirclePosition.y) > 2.6 ) && cameraCirclePosition.z > 6.0) cameraCirclePosition.z -= 6.0;
                 else if((abs(cameraCirclePosition.x) > 2.5 || abs(cameraCirclePosition.y) > 2.5 ) && cameraCirclePosition.z > 5.0) cameraCirclePosition.z -= 5.0;
                 
+=======
+                if((abs(cameraCirclePosition.x) > 3.0 || abs(cameraCirclePosition.y) > 3.0 ) && cameraCirclePosition.z > 6.0) cameraCirclePosition.z -= 6.0;
+                else if((abs(cameraCirclePosition.x) > 3.0 || abs(cameraCirclePosition.y) > 3.0 ) && cameraCirclePosition.z > 5.0) cameraCirclePosition.z -= 5.0;
+>>>>>>> dbe0751eadbab7c94f5f39faab34db289ed40e7b
                 #ifdef TRUE_POSE_DEBUGE
                     Eigen::Quaterniond quaternion(drone_poses_true->pose.orientation.w, drone_poses_true->pose.orientation.x, drone_poses_true->pose.orientation.y, drone_poses_true->pose.orientation.z);
                     Eigen::Vector3d translation(drone_poses_true->pose.position.x, drone_poses_true->pose.position.y, -drone_poses_true->pose.position.z);
@@ -363,7 +368,11 @@ cv::Point3f uavControl::detectCirclePosion(SelectPoint p)
             }
         }
         //当检测面积足够大且无人机离参考位姿较近时才解算圈的相对位置
+<<<<<<< HEAD
         if (circleSquareMax[0] > 1000.0 && circleSquareMax[1] > 1000.0 && circleSquareMax[0] < 15000.0 && circleSquareMax[1] < 15000.0 
+=======
+        if (circleSquareMax[0] > 1500.0 && circleSquareMax[1] > 1500.0 && circleSquareMax[0] < 15000.0 && circleSquareMax[1] < 15000.0 
+>>>>>>> dbe0751eadbab7c94f5f39faab34db289ed40e7b
             && uav_reached_location(ego_target_pose,visual_pose,10.0,10.0)) {  //矩形面积大于3000时计算矩形框内像素点的3D空间坐标位置
             // ORBPointsMathch(image_left,image_right,circle_detect_msg[0]);  //该方法先不用 等我回来调试
             visual_detect_flag = 1;
