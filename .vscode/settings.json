@@ -90,6 +90,7 @@
         "any": "cpp",
         "future": "cpp",
         "alignedvector3": "cpp",
-        "fft": "cpp"
+        "fft": "cpp",
+        "csetjmp": "cpp"
     }
 }

@@ -34,7 +34,8 @@
 // #define DEBUGE1
 #define ObstacleCircleRadius 0.75
 #define ObstacleCircleNum    17
-
+#define ODOM_INIT_TIME 3
+#define PD_DELAY_TIME  1
 
 
 typedef struct {
@@ -54,9 +55,8 @@ private:
     nav_msgs::Odometry visual_pose;
     geometry_msgs::PoseStamped ego_target_pose;
     tf::TransformListener listener;
-    geometry_msgs::PoseStamped tf_test_pose;
     ros::ServiceClient setGoalPosition_client,sim_takeoff_client,sim_reset_client;
-    ros::Publisher drone_vel_pub,drone_pose_pub,drone_true_odom_pub,ego_goal_point_pub, tf_modey_pub;
+    ros::Publisher drone_vel_pub,drone_pose_pub,drone_true_odom_pub,ego_goal_point_pub;
     ros::Subscriber drone_true_odom_sub,circle_poses_ref_sub,circle_poses_true_sub,tree_poses_true_sub, pd_vel_sub; //仿真器发送的话题
 
     airsim_ros::CirclePosesConstPtr circle_poses_ref;   //障碍圈位姿参考值
@@ -72,9 +72,8 @@ private:
     bool reset_flag = 0;
     bool odom_init_flag = 0;
     bool visual_detect_flag = 0;
-    bool ego_receive_flag = 0;
-    bool mid_point_flag = 0;
     bool pd_delay_flag = 0;
+    double pd_delay_start_time;
     double odom_init_start_time; //仿真器复位后的时间，里程计开始初始化的时间
     void uavSetGoalPostion(void);
     void circlePosesRef_callBack(const airsim_ros::CirclePosesConstPtr& circle);
@@ -85,7 +84,7 @@ private:
     // void egoPath_callBack(const visualization_msgs::Marker& pos_cmds);
     void dronePosesTrue_callBack(const geometry_msgs::PoseStampedConstPtr& drone_poses);
     void droneVisualPose_callBack(const nav_msgs::Odometry& drone_vins_poses);
-    cv::Point3f detectCirclePosion(SelectPoint p);
+    std::vector<double> detectCirclePosion(SelectPoint p);
     bool uav_reached_location(geometry_msgs::PoseStamped ref,nav_msgs::Odometry fdb,double distance_dxy,double distance_dz);
 public:
     uavControl(ros::NodeHandle& nh);
