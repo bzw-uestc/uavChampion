@@ -14,22 +14,22 @@ RUN apt update && apt install -y python3-catkin-tools ros-noetic-geographic-msgs
  ros-noetic-tf2-sensor-msgs ros-noetic-tf2-geometry-msgs ros-noetic-image-transport \
  net-tools libtool
 #添加镜像中所需的本地库文件
-ADD lib /fast_drone_ws/lib/
+ADD lib /uavChampion/lib/
 
 #编译glog库
 ENV ROS_DISTRO noetic
-WORKDIR /fast_drone_ws/lib/glog
+WORKDIR /uavChampion/lib/glog
 RUN ./autogen.sh && ./configure && make && make install
 RUN apt update && apt-get install -y liblapack-dev libsuitesparse-dev libcxsparse3 libgflags-dev libgoogle-glog-dev libgtest-dev
 #编译ceres-solver库
-WORKDIR /fast_drone_ws/lib/ceres-solver-2.0.0rc1
+WORKDIR /uavChampion/lib/ceres-solver-2.0.0rc1
 RUN mkdir build && cd build && cmake .. && make -j16 && make install && apt-get install ros-noetic-ddynamic-reconfigure
 #编译GPU版本的opencv4.5.5
 RUN apt update && apt-get install -y build-essential cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev \
  python-dev python-numpy libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libdc1394-22-dev
-WORKDIR /fast_drone_ws/lib/opencv-4.5.5
+WORKDIR /uavChampion/lib/opencv-4.5.5
 RUN mkdir build && cd build 
-WORKDIR /fast_drone_ws/lib/opencv-4.5.5/build
+WORKDIR /uavChampion/lib/opencv-4.5.5/build
 RUN cmake -D CMAKE_BUILD_TYPE=RELEASE \
  -D INSTALL_PYTHON_EXAMPLES=ON \
  -D INSTALL_C_EXAMPLES=ON \
@@ -55,7 +55,7 @@ RUN cmake -D CMAKE_BUILD_TYPE=RELEASE \
 RUN make -j16 && make install
 
 #添加镜像中所需的本地代码文件
-ADD src /fast_drone_ws/src/
+ADD src /uavChampion/src/
 ADD setup.sh /
 RUN chmod +x /setup.sh
 
@@ -65,7 +65,7 @@ RUN chmod +x /setup.sh
 # RUN chmod +x python_env.sh
 # RUN ./python_env.sh
 
-WORKDIR /fast_drone_ws/
+WORKDIR /uavChampion/
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh  && catkin_make && . devel/setup.sh
 
 ENTRYPOINT [ "/setup.sh" ]

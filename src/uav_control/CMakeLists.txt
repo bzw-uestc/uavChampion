@@ -125,6 +125,9 @@ catkin_package(
 ###########
 
 set(tensorRT_DIR ${PROJECT_SOURCE_DIR}/../../lib/TensorRT-8.6.1.6)
+# set(ONNXRUNTIME_ROOTDIR /usr/local)
+set(ONNXRUNTIME_DIR ${PROJECT_SOURCE_DIR}/../../lib/onnxruntime-linux-x64-gpu-1.16.1)
+# set(onnxruntime_INCLUDE_DIRS ${onnxruntime_DIR}/include)
 message(--------------------------------------------------${tensorRT_DIR})
 set(CUDA_LIB ${CUDA_INCLUDE_DIRS}/../lib64)
 ## Specify additional locations of header files
@@ -136,12 +139,17 @@ include_directories(
   ${PROJECT_SOURCE_DIR}/include
   ${CUDA_INCLUDE_DIRS}
   ${tensorRT_DIR}/include
+  ${ONNXRUNTIME_DIR}/include
+  # ${ONNXRUNTIME_ROOTDIR}/include/onnxruntime
+  # ${ONNXRUNTIME_ROOTDIR}/include/onnxruntime/core/session
+  # ${ONNXRUNTIME_ROOTDIR}/include/onnxruntime/core/framework
   include)
-  
+
 #link_directories(${CUDA_LIB})
 link_directories(${CUDA_LIBRARY_DIRS})
 #tensorRT
 link_directories(${tensorRT_DIR}/lib)
+link_directories(${ONNXRUNTIME_DIR}/lib)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -156,7 +164,8 @@ link_directories(${tensorRT_DIR}/lib)
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_node src/rosNodeMain.cpp app/circle_detect_task.cpp app/msg_process_task.cpp app/uav_control_task.cpp app/circleDetect.cpp)
+add_executable(${PROJECT_NAME}_node src/rosNodeMain.cpp app/circle_detect_task.cpp app/msg_process_task.cpp app/uav_control_task.cpp 
+app/circleDetect.cpp app/onnx2.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -176,6 +185,7 @@ target_link_libraries(${PROJECT_NAME}_node
    ${CUDA_LIBRARIES}
    nvinfer
    nvinfer_plugin
+   onnxruntime
    #cudart
  )
 
@@ -223,7 +233,7 @@ target_link_libraries(${PROJECT_NAME}_node
 
 #############
 ## Testing ##
-#############
+##########nvinfer_plugin###
 
 ## Add gtest based cpp test target and link libraries
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_uav_control.cpp)

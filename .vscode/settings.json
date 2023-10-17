@@ -1,5 +1,5 @@
 {
-    "editor.fontSize": 12,
+    "editor.fontSize": 16,
     "window.zoomLevel": 0.5,
     "cmake.sourceDirectory": "/home/uestc/bzw_ws/UAVChampion/fast-drone_ws/src",
     "files.associations": {
@@ -84,6 +84,12 @@
         "slist": "cpp",
         "scoped_allocator": "cpp",
         "filesystem": "cpp",
-        "__node_handle": "cpp"
+        "__node_handle": "cpp",
+        "charconv": "cpp",
+        "*.inc": "cpp",
+        "any": "cpp",
+        "future": "cpp",
+        "alignedvector3": "cpp",
+        "fft": "cpp"
     }
 }
