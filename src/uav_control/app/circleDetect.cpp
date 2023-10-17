@@ -410,11 +410,11 @@ std::vector<std::vector<float>>  Yolo::detect(cv::Mat image1, cv::Mat image2) {
     img[1] = image2;
     unsigned char* aBytes[2] = {img[0].data, img[1].data};
     
-    // auto start = std::chrono::system_clock::now();
+    auto start = std::chrono::system_clock::now();
     Infer(image1.cols, image1.rows, image1.channels(), aBytes, Boxes, ClassIndexs, BboxNum);
-    // auto end = std::chrono::system_clock::now();
+    auto end = std::chrono::system_clock::now();
     // std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
-    // int time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    int time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     // ROS_ERROR("%dms",time);
     // center = draw_objects(image, Boxes, ClassIndexs, BboxNum);
 

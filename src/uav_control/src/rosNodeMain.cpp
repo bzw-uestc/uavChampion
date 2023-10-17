@@ -103,17 +103,18 @@ int main(int argc, char** argv)
   });
 
   std::string package_path = ros::package::getPath("uav_control");
-  // std::string model_path_str = package_path + "/detect_model/yolov5n.trt";
-  // char* model_path=const_cast<char*>(model_path_str.c_str());
-  // ROS_ERROR("model_path:%s", model_path);
-  // Yolo yolo_detect(model_path);
+  std::string model_path_str = package_path + "/detect_model/yolov5n.trt";
+  char* model_path=const_cast<char*>(model_path_str.c_str());
+  ROS_ERROR("model_path:%s", model_path);
+  Yolo yolo_detect(model_path);
 
-  std::string model2_path_str = package_path + "/detect_model/best1.onnx";
-  char* model_path2=const_cast<char*>(model2_path_str.c_str());
-  ROS_ERROR("model_path:%s", model_path2);
-  Configuration yolo_nets = { 0.3, 0.5, 0.3, model_path2 }; //初始化属性
-  ROS_ERROR("123");
-	YOLOv5 yolo_model(yolo_nets);
+  // std::string model2_path_str = package_path + "/detect_model/best1.onnx";
+  // char* model_path2=const_cast<char*>(model2_path_str.c_str());
+  // ROS_ERROR("model_path:%s", model_path2);
+  // Configuration yolo_nets = { 0.3, 0.5, 0.3, model_path2 }; //初始化属性
+  // ROS_ERROR("123");
+	// YOLOv5 yolo_model(yolo_nets);
+
   // cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_ERROR);//设置OpenCV只输出错误日志
   // Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "yolov5s-5.0");
   // Ort::SessionOptions session_options;
@@ -131,25 +132,26 @@ int main(int argc, char** argv)
         auto start = std::chrono::system_clock::now();
         sensor_msgs::ImageConstPtr color_msg0 = nullptr;
         sensor_msgs::ImageConstPtr color_msg1 = nullptr;
-        color_msg0 = img_buf0.front();
-        color_msg1 = img_buf1.front();
-        // color_msg0 = color_msg_left;
-        // color_msg1 = color_msg_right;
+        // color_msg0 = img_buf0.front();
+        // color_msg1 = img_buf1.front();
+
+        color_msg0 = color_msg_left;
+        color_msg1 = color_msg_right;
         double t0 = color_msg0->header.stamp.toSec();
         double t1 = color_msg1->header.stamp.toSec();
-        if(t0 - t1 >= 0.005) {
-          img_buf1.pop();
-          ROS_ERROR("pop img1");
-          break;
-        } 
-        else if(t1 - t0 >= 0.005) {
-          img_buf0.pop();
-          ROS_ERROR("pop img0");
-          break;
-        }
-        else { //相机时间同步
-          img_buf0.pop();
-          img_buf1.pop();
+        // if(t0 - t1 >= 0.005) {
+        //   img_buf1.pop();
+        //   ROS_ERROR("pop img1");
+        //   break;
+        // } 
+        // else if(t1 - t0 >= 0.005) {
+        //   img_buf0.pop();
+        //   ROS_ERROR("pop img0");
+        //   break;
+        // }
+        // else { //相机时间同步
+          // img_buf0.pop();
+          // img_buf1.pop();
           cv_bridge::CvImageConstPtr ptr0,ptr1; 
 
           ptr0 = cv_bridge::toCvCopy(color_msg0, sensor_msgs::image_encodings::BGR8);
@@ -241,7 +243,7 @@ int main(int argc, char** argv)
 
           drone0.circle_detect_msg.clear();
 
-          // drone0.circle_detect_msg = yolo_detect.detect(ptr0->image, ptr1->image); //目标检测模块返回vector<float> 左上角x坐标、左上角y坐标、宽度、高度、类别名
+          drone0.circle_detect_msg = yolo_detect.detect(ptr0->image, ptr1->image); //目标检测模块返回vector<float> 左上角x坐标、左上角y坐标、宽度、高度、类别名
 
           // auto start = std::chrono::system_clock::now();
           // onnx_det(ptr0->image);
@@ -252,20 +254,22 @@ int main(int argc, char** argv)
           // }
           // std::cout<<"123"<<std::endl;
 
-          std::vector<float> detect_temp0,detect_temp1; 
-          cv::Mat image_left = ptr0->image ,image_right = ptr1->image;
-          detect_temp0 = yolo_model.det(image_left);
-          detect_temp1 = yolo_model.det(image_right);
-          drone0.circle_detect_msg.push_back(detect_temp0);
-          drone0.circle_detect_msg.push_back(detect_temp1);
-          sensor_msgs::ImagePtr detect_image_left = cv_bridge::CvImage(color_msg0->header, "bgr8", image_left).toImageMsg();
-          detect_left_pub.publish(detect_image_left);
+          // std::vector<float> detect_temp0,detect_temp1; 
+          // cv::Mat image_left = ptr0->image ,image_right = ptr1->image;
+          // detect_temp0 = yolo_model.det(image_left);
+          // detect_temp1 = yolo_model.det(image_right);
+          // drone0.circle_detect_msg.push_back(detect_temp0);
+          // drone0.circle_detect_msg.push_back(detect_temp1);
+          // sensor_msgs::ImagePtr detect_image_left = cv_bridge::CvImage(color_msg0->header, "bgr8", image_left).toImageMsg();
+          // detect_left_pub.publish(detect_image_left);
+
+
           drone0.image_left  = ptr0->image;
           drone0.image_right = ptr1->image;
           auto end = std::chrono::system_clock::now();
           int time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
           // ROS_ERROR("%dms",time);
-        }
+        // }
       }
       // if(!gps_buf.empty()) {
       //   geometry_msgs::Pose::ConstPtr gps_msg = gps_buf.front();
