@@ -96,12 +96,7 @@ void pubLatestOdometry(const Eigen::Vector3d &P, const Eigen::Quaterniond &Q, co
         pitch = -pitch;
         yaw = -yaw;
         odometry_temp.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw);//返回四元数
-        // odometry_temp.pose.pose.orientation.z = -odometry_temp.pose.pose.orientation.z;
-        // odometry_temp.pose.pose.orientation.w = -odometry_temp.pose.pose.orientation.w;
         pd_odometry.pose.pose.orientation = odometry_temp.pose.pose.orientation;
-
-        // odometry_temp.pose.pose.orientation.y = -odometry_temp.pose.pose.orientation.y;
-        // odometry_temp.pose.pose.orientation.z = -odometry_temp.pose.pose.orientation.z;
 
         odometry.twist.twist.linear.x = V.x();
         odometry.twist.twist.linear.y = V.y();

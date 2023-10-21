@@ -29,81 +29,45 @@
 #include "NvInferRuntimeCommon.h"
 #include "NvOnnxParser.h"
 #include "../app/onnx2.hpp"
+#include "../deep_image/StereoAlgorithms/FastACVNet_plus/include/FastACVNet_plus_Algorithm.h"
+// #include"FastACVNet_plus_Algorithm.h"
 
 void image0_callback(const sensor_msgs::ImageConstPtr &color_msg);
 void image1_callback(const sensor_msgs::ImageConstPtr &color_msg);
-void camera0Info_callback(const sensor_msgs::CameraInfoConstPtr& cameraInfo);
-void camera1Info_callback(const sensor_msgs::CameraInfoConstPtr& cameraInfo);
 void gpsCallback(const geometry_msgs::Pose::ConstPtr& gps_msg);
 cv::Mat getDepthFromStereo(const cv::Mat& img_left, const cv::Mat& img_right, const double& fx, const float& baseline);
 void insertDepth32f(cv::Mat& depth);
+cv::Mat disparity2depth(cv::Mat& disparity, float fx, float baseline);
+cv::Mat disparity2depth_float(cv::Mat& disparity, float fx, float baseline);
+cv::Mat heatmap(cv::Mat&disparity);
 
 std::queue<sensor_msgs::ImageConstPtr> img_buf0;
 std::queue<sensor_msgs::ImageConstPtr> img_buf1; //stereo_img
-sensor_msgs::CameraInfoConstPtr camera0_info;
-sensor_msgs::CameraInfoConstPtr camera1_info;
+std::queue<sensor_msgs::ImageConstPtr> img_buf0_ACVNet;
+std::queue<sensor_msgs::ImageConstPtr> img_buf1_ACVNet; //stereo_img
+
 std::queue<geometry_msgs::Pose::ConstPtr> gps_buf;
 sensor_msgs::PointCloud2 rosPointCloud;
-sensor_msgs::ImageConstPtr color_msg_left;
-sensor_msgs::ImageConstPtr color_msg_right;
-ros::Publisher camera0_info_pub,camera1_info_pub;
+
+int cnt_i = 0, cnt_j = 0;
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "uav_control_node");
   ros::NodeHandle nh("~");
 
   ros::Publisher stereo_pub = nh.advertise<sensor_msgs::Image>("/drone_0/depth", 1);
-  ros::Publisher gray_left_pub = nh.advertise<sensor_msgs::Image>("/narrow_stereo_textured/left/image_raw", 1); ///narrow_stereo_textured/left/image_raw
-  ros::Publisher gray_right_pub = nh.advertise<sensor_msgs::Image>("/narrow_stereo_textured/right/image_raw", 1);
   ros::Publisher detect_left_pub = nh.advertise<sensor_msgs::Image>("/detect_image_left", 1);
-
-  camera0_info_pub = nh.advertise<sensor_msgs::CameraInfo>("/narrow_stereo_textured/left/camera_info", 1);
-  camera1_info_pub = nh.advertise<sensor_msgs::CameraInfo>("/narrow_stereo_textured/right/camera_info", 1);
-
-  ros::Publisher pointCloud_pub = nh.advertise<sensor_msgs::PointCloud2>("/drone_0_pcl_render_node/cloud", 1);
   ros::Publisher drone_true_odom_pub = nh.advertise<nav_msgs::Odometry>("/drone_true_odom", 1);  //发布出仿真器的真实位姿
   // ros::Publisher odom_pub = nh.advertise<nav_msgs::Odometry>("/gps/odom", 10);
   
-  ros::Publisher positionx_pub = nh.advertise<std_msgs::Float64>("/gps/postionx", 10);
-  ros::Publisher positionkalx_pub = nh.advertise<std_msgs::Float64>("/gps/postionkalx", 10);
-  ros::Publisher positiony_pub = nh.advertise<std_msgs::Float64>("/gps/postiony", 10);
-  ros::Publisher positionkaly_pub = nh.advertise<std_msgs::Float64>("/gps/postionkaly", 10);
-  ros::Publisher positionz_pub = nh.advertise<std_msgs::Float64>("/gps/postionz", 10);
-  ros::Publisher positionkalz_pub = nh.advertise<std_msgs::Float64>("/gps/postionkalz", 10);
-  
   tf2_ros::TransformBroadcaster* tf_broadcaster;
   ros::Subscriber sub_left_image,sub_right_image,sub_gps_msg;
-  ros::Subscriber camera0_info_sub = nh.subscribe<sensor_msgs::CameraInfo>("/airsim_node/drone_1/front_left/Scene/camera_info", 1, camera0Info_callback);
-  ros::Subscriber camera1_info_sub = nh.subscribe<sensor_msgs::CameraInfo>("/airsim_node/drone_1/front_right/Scene/camera_info", 1, camera1Info_callback);
 
-  
   sub_left_image = nh.subscribe("/airsim_node/drone_1/front_left/Scene", 1, image0_callback);
   sub_right_image = nh.subscribe("/airsim_node/drone_1/front_right/Scene", 1, image1_callback);
-  sub_gps_msg = nh.subscribe("/airsim_node/drone_1/pose", 10, gpsCallback);
-
-
-  
-  // 创建一个独立线程来运行数据处理线程
-  std::vector<kalmanFilter> kal_gps_position;
-  for(int i=0; i<3; ++i) { //创建xyz三轴gps位置卡尔曼滤波器
-    double initial_position = 0.0; // 初始化位置
-    double initial_Q = 9.0;       // 初始化过程噪声协方差，3的平方
-    double initial_R = 1.0;       // 初始化测量噪声协方差
-    kalmanFilter kf(initial_position, initial_Q, initial_R);
-    kal_gps_position.push_back(kf);
-  }
-
-  uavControl drone0(nh);
-  ros::Rate uavControl_loop_rate(20);//设置循环频率，20Hz；也可以设为其他频率，如1为1Hz
-  std::thread uavControl_thread([&]() {
-    while (ros::ok()) {
-      drone0.uavControlTask();
-      uavControl_loop_rate.sleep();
-    }
-  });
 
   std::string package_path = ros::package::getPath("uav_control");
-  std::string model_path_str = package_path + "/detect_model/yolov5n.trt";
+  std::string model_path_str = package_path + "/detect_model/yolov5n4090.trt";
   char* model_path=const_cast<char*>(model_path_str.c_str());
   ROS_ERROR("model_path:%s", model_path);
   Yolo yolo_detect(model_path);
@@ -115,56 +79,51 @@ int main(int argc, char** argv)
   // ROS_ERROR("123");
 	// YOLOv5 yolo_model(yolo_nets);
 
-  // cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_ERROR);//设置OpenCV只输出错误日志
-  // Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "yolov5s-5.0");
-  // Ort::SessionOptions session_options;
-  // session_options.SetIntraOpNumThreads(1);
-  // session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
-
-  // char* onnx_model_path = "/home/uestc/mingwei/fast-drone_ws/best1.onnx";
-  // Ort::Session session(env, onnx_model_path, session_options);
+  char* stereo_calibration_path="/home/uestc/uavChampion/src/uav_control/deep_image/StereoAlgorithms/FastACVNet_plus/test/StereoCalibrationUAV.yml";
+  char* strero_engine_path="/home/uestc/uavChampion/src/uav_control/deep_image/StereoAlgorithms/FastACVNet_plus/test/fast_acvnet_plus_generalization_opset16_480x640.onnx";
+  void * fastacvnet=Initialize(strero_engine_path,0,stereo_calibration_path);
 
 
-  // ros::Rate msgProcess_loop_rate(200);//设置循环频率，10Hz；也可以设为其他频率，如1为1Hz
+  uavControl drone0(nh);
+  ros::Rate uavControl_loop_rate(20);//设置循环频率，20Hz；也可以设为其他频率，如1为1Hz
+  std::thread uavControl_thread([&]() {
+    while(1) {
+      drone0.uavControlTask();
+      uavControl_loop_rate.sleep();
+    }
+  });
+
+
   std::thread msgProcess_thread([&]() {
-    while (ros::ok()) {
-      if(color_msg_left != nullptr && color_msg_right != nullptr) { //!img_buf0.empty() && !img_buf1.empty()   color_msg_left != nullptr && color_msg_right != nullptr
+    while(1) {
+      if(!img_buf0.empty() && !img_buf1.empty()) { //!img_buf0.empty() && !img_buf1.empty()   color_msg_left != nullptr && color_msg_right != nullptr
         auto start = std::chrono::system_clock::now();
         sensor_msgs::ImageConstPtr color_msg0 = nullptr;
         sensor_msgs::ImageConstPtr color_msg1 = nullptr;
-        // color_msg0 = img_buf0.front();
-        // color_msg1 = img_buf1.front();
-
-        color_msg0 = color_msg_left;
-        color_msg1 = color_msg_right;
+        color_msg0 = img_buf0.front();
+        color_msg1 = img_buf1.front();
         double t0 = color_msg0->header.stamp.toSec();
         double t1 = color_msg1->header.stamp.toSec();
-        // if(t0 - t1 >= 0.005) {
-        //   img_buf1.pop();
-        //   ROS_ERROR("pop img1");
-        //   break;
-        // } 
-        // else if(t1 - t0 >= 0.005) {
-        //   img_buf0.pop();
-        //   ROS_ERROR("pop img0");
-        //   break;
-        // }
-        // else { //相机时间同步
-          // img_buf0.pop();
-          // img_buf1.pop();
+        // ROS_ERROR("t0:%f,t1:%f",t0,t1);
+        if(t0 - t1 >= 0.005) {
+          img_buf1.pop();
+          ROS_ERROR("pop img1");
+          break;
+        } 
+        else if(t1 - t0 >= 0.005) {
+          img_buf0.pop();
+          ROS_ERROR("pop img0");
+          break;
+        }
+        else { //相机时间同步
+          img_buf0.pop();
+          img_buf1.pop();
           cv_bridge::CvImageConstPtr ptr0,ptr1; 
-
           ptr0 = cv_bridge::toCvCopy(color_msg0, sensor_msgs::image_encodings::BGR8);
           ptr1 = cv_bridge::toCvCopy(color_msg1, sensor_msgs::image_encodings::BGR8);// ros中的sensor_msg转成cv::Mat
           cv::Mat grayImageLeft,grayImageRight;
           cv::cvtColor(ptr0->image, grayImageLeft, cv::COLOR_BGR2GRAY);
           cv::cvtColor(ptr1->image, grayImageRight, cv::COLOR_BGR2GRAY);
-          
-          /*重制图像话题为深度图 重制camerainfo 用于生成深度图*/
-          sensor_msgs::ImagePtr gray_left_msg = cv_bridge::CvImage(color_msg0->header, "mono8", grayImageLeft).toImageMsg();
-          gray_left_pub.publish(gray_left_msg);
-          sensor_msgs::ImagePtr gray_right_msg = cv_bridge::CvImage(color_msg1->header, "mono8", grayImageRight).toImageMsg();
-          gray_right_pub.publish(gray_right_msg);
 
           if(drone0.drone_pose_true_flag) {
             nav_msgs::Odometry drone_odom;
@@ -187,73 +146,38 @@ int main(int argc, char** argv)
             drone_true_odom_pub.publish(drone_odom);
           }
 
-          // sensor_msgs::CameraInfo camera0_info_rebuild = *camera0_info;
-          // camera0_info_rebuild.distortion_model = "plumb_bob";
-          // camera0_info_rebuild.D = {0.0,0.0,0.0,0.0,0.0};myclass
-          // boost::array<double, 9> R = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
-          // camera0_info_rebuild.R = R;
-          // camera0_info_rebuild.binning_x = 1;
-          // camera0_info_rebuild.binning_y = 1;
-          // camera0_info_rebuild.header = color_msg0->header;
-          // camera0_info_rebuild.header.frame_id = "camera_init";
-          // camera0_info_pub.publish(camera0_info_rebuild);
-          // sensor_msgs::CameraInfo camera1_info_rebuild = *camera1_info;
-          // boost::array<double, 12> P = {320.0, 0.0, 320.0, -95.0, 0.0, 320.0, 240.0, 0.0, 0.0, 0.0, 1.0, 0.0};
-          // camera1_info_rebuild.P = P;
-          // camera1_info_rebuild.distortion_model = "plumb_bob";
-          // camera1_info_rebuild.D = {0.0,0.0,0.0,0.0,0.0};
-          // camera1_info_rebuild.R = R;
-          // camera1_info_rebuild.binning_x = 1;
-          // camera1_info_rebuild.binning_y = 1;
-          // camera1_info_rebuild.header = color_msg1->header;
-          // camera1_info_rebuild.header.frame_id = "camera_init";
-          // camera1_info_pub.publish(camera1_info_rebuild);
-
-          cv::Mat img_depth = getDepthFromStereo(grayImageLeft,grayImageRight,320.0,95);
+          ///////////////////////////////////openCV SGBM///////////////////////////////////////////////////////
+          cv::Mat disparity = getDepthFromStereo(grayImageLeft,grayImageRight,320.0,95);
+          cv::Mat img_depth = disparity2depth(disparity,320.0,95.0);
+          // cv::Mat img_depth32f = disparity2depth_float(disparity,320.0,95.0);
           sensor_msgs::ImagePtr rosDepthImage = cv_bridge::CvImage(std_msgs::Header(), "16UC1", img_depth).toImageMsg();
           rosDepthImage->header.stamp = color_msg0->header.stamp;  //同步深度图时间戳
           rosDepthImage->header.frame_id = "camera_depth";
           stereo_pub.publish(rosDepthImage);
 
-          // Yolo yolo("yolov5n.trt");
+
           // cnt_j++;
           // if(cnt_j > 5) {
           //   cnt_j = 0;
-          //   std::string name = "/home/uestc/uavChampion/dataset/" + std::to_string(cnt_i) + ".jpg";
+          //   std::string name_left = "/home/uestc/uavChampion/left/" + std::to_string(cnt_i) + ".jpg";
+          //   std::string name_right = "/home/uestc/uavChampion/right/" + std::to_string(cnt_i) + ".jpg";
           //   cnt_i++;
-          //   cv::imwrite(name, ptr1->image);
+          //   cv::imwrite(name_left, ptr0->image);
+          //   cv::imwrite(name_right, ptr1->image);
           // }
 
-          // drone0.circle_detect_msg.clear();
-          // std::vector<float> detect_temp0,detect_temp1; //目标检测模块返回vector<float> 左上角x坐标、左上角y坐标、宽度、高度、类别名
-          // detect_temp0 = yolo_detect.detect(ptr0->image);
-          // drone0.circle_detect_msg.push_back(detect_temp0);
-          
-          // detect_temp1 = yolo_detect.detect(ptr1->image);
-          // drone0.circle_detect_msg.push_back(detect_temp1);
-          // drone0.image_left  = ptr0->image;
-          // drone0.image_right = ptr1->image;
-          // auto end = std::chrono::system_clocimage;
-          // auto end = std::chrono::system_clock::now();
-          // int time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-          // ROS_ERROR("%dms",time);k::now();
-          // int time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-          // ROS_ERROR("%dms",time);
-
-
+          /////////////////////////////////tensorRT////////////////////////////////////////////////////////////
+          cv::Mat detect_img[2];
+          detect_img[0] = ptr0->image.clone();
+          detect_img[1] = ptr1->image.clone();
           drone0.circle_detect_msg.clear();
+          drone0.circle_detect_msg = yolo_detect.detect(detect_img); //目标检测模块返回vector<float> 左上角x坐标、左上角y坐标、宽度、高度、类别名
+          sensor_msgs::ImagePtr detect_image_left = cv_bridge::CvImage(color_msg0->header, "bgr8", detect_img[0]).toImageMsg();
+          detect_left_pub.publish(detect_image_left);
 
-          drone0.circle_detect_msg = yolo_detect.detect(ptr0->image, ptr1->image); //目标检测模块返回vector<float> 左上角x坐标、左上角y坐标、宽度、高度、类别名
-
-          // auto start = std::chrono::system_clock::now();
-          // onnx_det(ptr0->image);
-          // for(int i = 0; i < drone0.circle_detect_msg.size(); i++) {
-          //   for(int j = 0; j < drone0.circle_detect_msg[i].size(); j++) {
-          //     ROS_ERROR("%f",drone0.circle_detect_msg[i][j]);
-          //   }
-          // }
-          // std::cout<<"123"<<std::endl;
-
+          // cv::imshow("left",detect_img[0]);
+          // cv::waitKey(1);
+          //////////////////////////////////oonx/////////////////////////////////////////////////////////////////
           // std::vector<float> detect_temp0,detect_temp1; 
           // cv::Mat image_left = ptr0->image ,image_right = ptr1->image;
           // detect_temp0 = yolo_model.det(image_left);
@@ -266,60 +190,108 @@ int main(int argc, char** argv)
 
           drone0.image_left  = ptr0->image;
           drone0.image_right = ptr1->image;
+          // drone0.image_depth = img_depth32f;
+
           auto end = std::chrono::system_clock::now();
           int time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-          // ROS_ERROR("%dms",time);
-        // }
+          // ROS_ERROR("task1:%dms",time);
+        }
       }
-      // if(!gps_buf.empty()) {
-      //   geometry_msgs::Pose::ConstPtr gps_msg = gps_buf.front();
-      //   gps_buf.pop();
-      //   double kalman_position_x = kal_gps_position[0].update(gps_msg->position.x);
-      //   double kalman_position_y = kal_gps_position[0].update(gps_msg->position.y);
-      //   double kalman_position_z = kal_gps_position[0].update(gps_msg->position.z);
-      //   std_msgs::Float64 positionx,positiony,positionz;
-      //   std_msgs::Float64 positionkalx,positionkaly,positionkalz;
-      //   positionx.data = gps_msg->position.x;
-      //   positiony.data = gps_msg->position.y;
-      //   positionz.data = gps_msg->position.z;
-      //   positionkalx.data = kalman_position_x;
-      //   positionkaly.data = kalman_position_y;
-      //   positionkalz.data = kalman_position_z;
-      //   positionx_pub.publish(positionx);
-      //   positiony_pub.publish(positiony);
-      //   positionz_pub.publish(positionz);
-      //   positionkalx_pub.publish(positionkalx);
-      //   positionkaly_pub.publish(positionkaly);
-      //   positionkalz_pub.publish(positionkalz);
-      // }
-      // 休眠以维持指定的频率
-      // msgProcess_loop_rate.sleep();
     }
   });
+
+  // std::thread fastACVNet_thread([&]() {
+  //   while (ros::ok()) {
+  //     if(!img_buf0_ACVNet.empty() && !img_buf1_ACVNet.empty()) { //!img_buf0.empty() && !img_buf1.empty()   color_msg_left != nullptr && color_msg_right != nullptr
+  //       auto start = std::chrono::system_clock::now();
+  //       sensor_msgs::ImageConstPtr color_msg0 = nullptr;
+  //       sensor_msgs::ImageConstPtr color_msg1 = nullptr;
+  //       color_msg0 = img_buf0_ACVNet.front();
+  //       color_msg1 = img_buf1_ACVNet.front();
+  //       double t0 = color_msg0->header.stamp.toSec();
+  //       double t1 = color_msg1->header.stamp.toSec();
+  //       if(t0 - t1 >= 0.005) {
+  //         img_buf1_ACVNet.pop();
+  //         ROS_ERROR("pop img1");
+  //         break;
+  //       } 
+  //       else if(t1 - t0 >= 0.005) {
+  //         img_buf0_ACVNet.pop();
+  //         ROS_ERROR("pop img0");
+  //         break;
+  //       }
+  //       else { //相机时间同步
+  //         img_buf0_ACVNet.pop();
+  //         img_buf1_ACVNet.pop();
+  //         cv_bridge::CvImageConstPtr ptr0,ptr1; 
+  //         ptr0 = cv_bridge::toCvCopy(color_msg0, sensor_msgs::image_encodings::BGR8);
+  //         ptr1 = cv_bridge::toCvCopy(color_msg1, sensor_msgs::image_encodings::BGR8);// ros中的sensor_msg转成cv::Mat
+
+  //         //FastACVNet
+  //         float*pointcloud=new float[ptr0->image.cols*ptr0->image.rows*6];
+  //         cv::Mat imageL1=ptr0->image.clone();
+  //         cv::Mat imageR1=ptr1->image.clone();          
+  //         // cv::Mat imageL1 = cv::imread("/home/uestc/uavChampion/left/80.jpg" );
+  //         // cv::Mat imageR1 = cv::imread("/home/uestc/uavChampion/right/80.jpg");
+  //         cv::Mat disparity;
+
+  //         // cv::imshow("left",imageL1);
+  //         // cv::imshow("right",imageR1);
+
+  //         RunFastACVNet_plus_RectifyImage(fastacvnet,imageL1,imageR1,pointcloud,disparity);
+  //         cv::Mat Heap_map = heatmap(disparity);
+  //         // cv::imshow("disparity",disparity);
+  //         // cv::imwrite("/home/uestc/uavChampion/disparity123.jpg",disparity);
+  //         // 读取图像文件
+  //         // cv::Mat Heap_map = cv::imread("/home/uestc/mingwei/StereoAlgorithms/build/heatmap80.jpg", cv::IMREAD_COLOR);
+
+  //         // cv::Scalar color(0, 0, 255); // 蓝色 (BGR颜色)
+  //         // // 画一个点
+  //         // cv::circle(Heap_map, cv::Point2f(225, 220), 2, color, -1); // 5表示点的半径，-1表示填充点
+  //         // cv::circle(Heap_map, cv::Point2f(330, 220), 2, color, -1); // 5表示点的半径，-1表示填充点
+  //         // float left = pointcloud[(220*640+225)*6+2];
+  //         // float right = pointcloud[(220*640+330)*6+2];
+  //         // ROS_ERROR("%f,%f",left,right);
+  //         // cv::Mat gray;
+  //         // cv::cvtColor(Heap_map, gray, cv::COLOR_BGR2GRAY);
+  //         // cv::imwrite("/home/uestc/uavChampion/gray111.jpg", gray);
+
+  //         cv::Mat img_depth = cv::Mat::zeros(disparity.size(), CV_16UC1); //深度图输出是CV_16UC1
+  //         img_depth = disparity2depth(disparity,320.0,95.0);
+  //         cv::Mat img_depth32f = disparity2depth_float(disparity,320.0,95.0);
+          
+  //         // cv::imshow("img_depth",img_depth);
+  //         // cv::imshow("disparity",disparity);
+
+  //         // sensor_msgs::ImagePtr rosDepthImage = cv_bridge::CvImage(std_msgs::Header(), "16UC1", img_depth).toImageMsg();
+  //         // rosDepthImage->header.stamp = color_msg0->header.stamp;  //同步深度图时间戳
+  //         // rosDepthImage->header.frame_id = "camera_depth";
+  //         // stereo_pub.publish(rosDepthImage);
+  //         drone0.heat_map = Heap_map;
+  //         drone0.pointcloud = pointcloud;
+  //         auto end = std::chrono::system_clock::now();
+  //         int time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+  //         ROS_ERROR("task2:%dms",time);
+  //       }
+  //     }
+  //   }
+  // });
+
   ros::spin();
   return 0;
 }
 
+
 void image0_callback(const sensor_msgs::ImageConstPtr& color_msg) {
   img_buf0.emplace(color_msg);
-  color_msg_left = color_msg;
+  img_buf0_ACVNet.emplace(color_msg);
   // ROS_INFO("receive image0");
 }
 
 void image1_callback(const sensor_msgs::ImageConstPtr& color_msg) {
   img_buf1.emplace(color_msg);
-  color_msg_right = color_msg;
+  img_buf1_ACVNet.emplace(color_msg);
   // ROS_INFO("receive image1");
-}
-
-void camera0Info_callback(const sensor_msgs::CameraInfoConstPtr& cameraInfo) {
-  camera0_info = cameraInfo;
-  // ROS_INFO("receive image0");
-}
-
-void camera1Info_callback(const sensor_msgs::CameraInfoConstPtr& cameraInfo) {
-  camera1_info = cameraInfo;
-  // ROS_INFO("rebuild camera1_info");
 }
 
 void gpsCallback(const geometry_msgs::Pose::ConstPtr& gps_msg) {
@@ -403,26 +375,15 @@ cv::Mat getDepthFromStereo(const cv::Mat& img_left, const cv::Mat& img_right, co
 
   cv::Mat disparity;
   cudaDisparity.download(disparity);
-  insertDepth32f(disparity);
-  cv::Mat disp8U = cv::Mat(disparity.rows, disparity.cols, CV_8UC1);
-  disparity.convertTo(disp8U,CV_8UC1);
+  // insertDepth32f(disparity);
+  return disparity;
+
+  // cv::Mat depthMap16U = cv::Mat::zeros(img_left.size(), CV_16UC1); //深度图输出是CV_16UC1
+  // depthMap16U = disparity2depth(disparity,fx,baseline);
   
-  cv::Mat depthMap16U = cv::Mat::zeros(disp8U.size(), CV_16UC1); //深度图输出是CV_16UC1
-  int height = disp8U.rows;
-  int width = disp8U.cols;
-  uchar* dispData = (uchar*)disp8U.data; //视差图是CV_8UC1
-  unsigned short* depthData = (unsigned short*)depthMap16U.data;
-  for (int i = 0; i < height; i++) {
-      for (int j = 0; j < width; j++) {
-          int id = i*width + j;
-          if (!dispData[id])  continue;  //防止0除
-          depthData[id] = static_cast<unsigned short>((float)fx *baseline / ((float)dispData[id]));
-      }
-  }
-  
-  ros::Time end = ros::Time::now();
-  // std::cout << end - start << std::endl;
-  return depthMap16U;
+  // ros::Time end = ros::Time::now();
+  // // std::cout << end - start << std::endl;
+  // return depthMap16U;
 }
 
 
@@ -560,4 +521,61 @@ void insertDepth32f(cv::Mat& depth)
         }
         cv::GaussianBlur(depth, depth, cv::Size(s, s), s, s);
     }
+}
+
+cv::Mat disparity2depth(cv::Mat& disparity, float fx, float baseline) {
+  // cv::Mat disp8U = cv::Mat(disparity.rows, disparity.cols, CV_8UC1);
+  // disparity.convertTo(disp8U,CV_8UC1);
+  
+  cv::Mat depthMap16U = cv::Mat::zeros(disparity.size(), CV_16UC1); //深度图输出是CV_16UC1
+  int height = disparity.rows;
+  int width = disparity.cols;
+  float* dispData = (float*)disparity.data; //视差图是CV_8UC1
+  unsigned short* depthData = (unsigned short*)depthMap16U.data;
+  for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
+          int id = i*width + j;
+          if (!dispData[id])  continue;  //防止0除
+          depthData[id] = static_cast<unsigned short>((float)fx * baseline / ((float)dispData[id]));
+      }
+  }
+  return depthMap16U;
+}
+
+cv::Mat disparity2depth_float(cv::Mat& disparity, float fx, float baseline) {
+  // cv::Mat disp8U = cv::Mat(disparity.rows, disparity.cols, CV_8UC1);
+  // disparity.convertTo(disp8U,CV_8UC1);
+  
+  cv::Mat depthMap32F = cv::Mat::zeros(disparity.size(), CV_32FC1); //深度图输出是CV_16UC1
+  int height = disparity.rows;
+  int width = disparity.cols;
+  float* dispData = (float*)disparity.data; //视差图是CV_8UC1
+  float* depthData = (float*)depthMap32F.data;
+  for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
+          int id = i*width + j;
+          if (!dispData[id])  continue;  //防止0除
+          depthData[id] = static_cast<float>((float)fx * baseline / ((float)dispData[id]));
+      }
+  }
+  return depthMap32F;
+}
+
+cv::Mat heatmap(cv::Mat&disparity)
+{
+    //max min
+    cv::Mat image_re = disparity.reshape(1);
+    double minValue, maxValue;   
+    cv::Point  minIdx, maxIdx;     
+    cv::minMaxLoc(image_re, &minValue, &maxValue, &minIdx, &maxIdx);
+    
+    cv::Mat mean_mat(cv::Size(disparity.cols,disparity.rows), CV_32FC1, minValue);
+    cv::Mat std_mat(cv::Size(disparity.cols,disparity.rows), CV_32FC1, (maxValue-minValue)/255);
+
+    cv::Mat norm_disparity_map = (disparity - mean_mat) / std_mat;
+    cv::Mat heap_map,abs_map;
+    cv::convertScaleAbs(norm_disparity_map,abs_map,1);
+    cv::applyColorMap(abs_map,heap_map,cv::COLORMAP_JET);
+    return heap_map;
+
 }

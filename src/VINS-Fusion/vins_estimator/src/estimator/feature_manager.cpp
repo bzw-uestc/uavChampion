@@ -62,13 +62,12 @@ bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, vec
     for (auto &id_pts : image)
     {
         FeaturePerFrame f_per_fra(id_pts.second[0].second, td);
-        // assert(id_pts.second[0].first == 0);
-        // if (!std::isinf(cur_un_pts[i].x) && !std::isinf(cur_un_pts[i].y) && !std::isnan(cur_un_pts[i].x) && !std::isnan(cur_un_pts[i].y))
+        assert(id_pts.second[0].first == 0);
 
         if(id_pts.second.size() == 2)
         {
             f_per_fra.rightObservation(id_pts.second[1].second);
-            // assert(id_pts.second[1].first == 1);
+            assert(id_pts.second[1].first == 1);
         }
 
         int feature_id = id_pts.first;

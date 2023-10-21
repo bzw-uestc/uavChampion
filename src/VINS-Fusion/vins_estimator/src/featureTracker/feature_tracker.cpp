@@ -260,6 +260,8 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
     map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> featureFrame;
     for (size_t i = 0; i < ids.size(); i++)
     {
+      if (!std::isinf(cur_un_pts[i].x) && !std::isinf(cur_un_pts[i].y) && !std::isnan(cur_un_pts[i].x) && !std::isnan(cur_un_pts[i].y))
+      {
         int feature_id = ids[i];
         double x, y ,z;
         x = cur_un_pts[i].x;
@@ -276,28 +278,32 @@ map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> FeatureTracker::trackIm
         Eigen::Matrix<double, 7, 1> xyz_uv_velocity;
         xyz_uv_velocity << x, y, z, p_u, p_v, velocity_x, velocity_y;
         featureFrame[feature_id].emplace_back(camera_id,  xyz_uv_velocity);
+      }
     }
 
     if (!_img1.empty() && stereo_cam)
     {
         for (size_t i = 0; i < ids_right.size(); i++)
         {
-            int feature_id = ids_right[i];
-            double x, y ,z;
-            x = cur_un_right_pts[i].x;
-            y = cur_un_right_pts[i].y;
-            z = 1;
-            double p_u, p_v;
-            p_u = cur_right_pts[i].x;
-            p_v = cur_right_pts[i].y;
-            int camera_id = 1;
-            double velocity_x, velocity_y;
-            velocity_x = right_pts_velocity[i].x;
-            velocity_y = right_pts_velocity[i].y;
+            if (!std::isinf(cur_un_pts[i].x) && !std::isinf(cur_un_pts[i].y) && !std::isnan(cur_un_pts[i].x) && !std::isnan(cur_un_pts[i].y))
+            {
+                int feature_id = ids_right[i];
+                double x, y ,z;
+                x = cur_un_right_pts[i].x;
+                y = cur_un_right_pts[i].y;
+                z = 1;
+                double p_u, p_v;
+                p_u = cur_right_pts[i].x;
+                p_v = cur_right_pts[i].y;
+                int camera_id = 1;
+                double velocity_x, velocity_y;
+                velocity_x = right_pts_velocity[i].x;
+                velocity_y = right_pts_velocity[i].y;
 
-            Eigen::Matrix<double, 7, 1> xyz_uv_velocity;
-            xyz_uv_velocity << x, y, z, p_u, p_v, velocity_x, velocity_y;
-            featureFrame[feature_id].emplace_back(camera_id,  xyz_uv_velocity);
+                Eigen::Matrix<double, 7, 1> xyz_uv_velocity;
+                xyz_uv_velocity << x, y, z, p_u, p_v, velocity_x, velocity_y;
+                featureFrame[feature_id].emplace_back(camera_id,  xyz_uv_velocity);
+            }
         }
     }
 

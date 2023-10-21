@@ -27,19 +27,39 @@ queue<sensor_msgs::PointCloudConstPtr> feature_buf;
 queue<sensor_msgs::ImageConstPtr> img0_buf;
 queue<sensor_msgs::ImageConstPtr> img1_buf;
 std::mutex m_buf;
-
+double img0_last_time=0,img1_last_time=0;
 
 void img0_callback(const sensor_msgs::ImageConstPtr &img_msg)
 {
     m_buf.lock();
-    img0_buf.push(img_msg);
+    if(!img0_last_time) { //first
+        img0_buf.push(img_msg);
+        img0_last_time = img_msg->header.stamp.toSec();
+    }
+    else {
+        double t0 = img_msg->header.stamp.toSec();
+        if(t0 - img0_last_time > 0.03) {
+            img0_buf.push(img_msg);
+            img0_last_time = img_msg->header.stamp.toSec();
+        }
+    }
     m_buf.unlock();
 }
 
 void img1_callback(const sensor_msgs::ImageConstPtr &img_msg)
 {
     m_buf.lock();
-    img1_buf.push(img_msg);
+    if(!img1_last_time) { //first
+        img1_buf.push(img_msg);
+        img1_last_time = img_msg->header.stamp.toSec();
+    }
+    else {
+        double t0 = img_msg->header.stamp.toSec();
+        if(t0 - img1_last_time > 0.03) {
+            img1_buf.push(img_msg);
+            img1_last_time = img_msg->header.stamp.toSec();
+        }
+    }
     m_buf.unlock();
 }
 

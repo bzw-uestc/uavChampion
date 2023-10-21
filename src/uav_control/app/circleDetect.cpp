@@ -118,7 +118,7 @@ float* Yolo::blobFromImage(cv::Mat& img1, cv::Mat& img2) {
 }
 
 
-std::vector<cv::Point> Yolo::draw_objects(const cv::Mat img[2], float* Boxes[2], int* ClassIndexs[2], int* BboxNum[2]) {
+std::vector<cv::Point> Yolo::draw_objects(const cv::Mat *img, float* Boxes[2], int* ClassIndexs[2], int* BboxNum[2]) {
   cv::Point center;
   std::vector<cv::Point> centerbox;
 
@@ -147,9 +147,9 @@ std::vector<cv::Point> Yolo::draw_objects(const cv::Mat img[2], float* Boxes[2],
   
 
   
-  cv::imshow("result_left", img[0]);
-  cv::imshow("result_right", img[1]);
-  cv::waitKey(1);
+  // cv::imshow("result_left", img[0]);
+  // cv::imshow("result_right", img[1]);
+  // cv::waitKey(1);
 
   return centerbox;
 }
@@ -396,8 +396,8 @@ Yolo::~Yolo() {
   runtime->destroy();
 }
 
-std::vector<std::vector<float>>  Yolo::detect(cv::Mat image1, cv::Mat image2) {
-  if (!(image1.empty() || image2.empty())) {
+std::vector<std::vector<float>>  Yolo::detect(const cv::Mat *img) {
+  if (!(img[0].empty() || img[1].empty())) {
     // char* model_path = "yolov5n.trt";
     float* Boxes[2] = {new float[4000], new float[4000]};
     int* BboxNum[2] = {new int[1], new int[1]};
@@ -405,18 +405,15 @@ std::vector<std::vector<float>>  Yolo::detect(cv::Mat image1, cv::Mat image2) {
     std::vector<cv::Point>  center;
     // Yolo yolo(model_path);
 
-    cv::Mat img[2];
-    img[0] = image1;
-    img[1] = image2;
     unsigned char* aBytes[2] = {img[0].data, img[1].data};
     
     auto start = std::chrono::system_clock::now();
-    Infer(image1.cols, image1.rows, image1.channels(), aBytes, Boxes, ClassIndexs, BboxNum);
+    Infer(img[0].cols, img[0].rows, img[0].channels(), aBytes, Boxes, ClassIndexs, BboxNum);
     auto end = std::chrono::system_clock::now();
     // std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
     int time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     // ROS_ERROR("%dms",time);
-    // center = draw_objects(image, Boxes, ClassIndexs, BboxNum);
+    center = draw_objects(img, Boxes, ClassIndexs, BboxNum);
 
     std::vector<std::vector<float>> objects;
     for (int i = 0; i < 2; i++)

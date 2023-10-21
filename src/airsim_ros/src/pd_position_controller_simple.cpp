@@ -44,7 +44,7 @@ void PIDPositionController::initialize_ros()
     #ifdef TRUE_POSE_DEBUGE
         airsim_odom_sub_ = nh_.subscribe("/airsim_node/drone_1/debug/pose_gt", 50, &PIDPositionController::airsim_odom_cb, this);
     #else
-      visual_odom_sub_ = nh_.subscribe("/vins_fusion/imu_propagate_for_pd", 50, &PIDPositionController::visual_odom_cb, this);
+      visual_odom_sub_ = nh_.subscribe("/vins_fusion/imu_propagate_for_pd", 1, &PIDPositionController::visual_odom_cb, this);
     #endif
     //home_geopoint_sub_ = nh_.subscribe("/airsim_node/home_geo_point", 50, &PIDPositionController::home_geopoint_cb, this);
     // todo publish this under global nodehandle / "airsim node" and hide it from user
@@ -82,7 +82,7 @@ void PIDPositionController::visual_odom_cb(const nav_msgs::Odometry& odom_msg)
     curr_position_.x = odom_msg.pose.pose.position.x;
     curr_position_.y = odom_msg.pose.pose.position.y;
     curr_position_.z = odom_msg.pose.pose.position.z;
-    curr_position_.yaw = utils::get_yaw_from_quat_msg(odom_msg.pose.pose.orientation);
+    curr_position_.yaw = (utils::get_yaw_from_quat_msg(odom_msg.pose.pose.orientation));
     // ROS_INFO("%f %f %f %f", odom_msg.orientation.w, odom_msg.orientation.x,odom_msg.orientation.y,odom_msg.orientation.z);
     // ROS_ERROR("GET pose %f %f %f %f", curr_position_.x, curr_position_.y, curr_position_.z, curr_position_.yaw);
 }

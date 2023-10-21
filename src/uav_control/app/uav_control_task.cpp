@@ -17,7 +17,8 @@ void uavControl::uavControlTask(void) {
     }
     else if(circle_msg_flag) { //circle_msg_flag
         cv::Point3f circlePositionWorld;
-        cv::Point3f circlePositionCamera;
+        cv::Point3f circlePositionCamera; 
+        cv::Point3f circlePositionACVNet;
         if(!circle_detect_msg.empty()) { //当检测信息不为空时尝试恢复检测目标的3D坐标
             std::vector<double> upm = detectCirclePosion(UpperMidpoint);
             std::vector<double> lom = detectCirclePosion(LowerMidpoint);
@@ -31,9 +32,38 @@ void uavControl::uavControlTask(void) {
                 circlePositionCamera.x = (upm[2] + lom[2] + lem[2] + rim[2]) / 4;
                 circlePositionCamera.y = (upm[3] + lom[3] + lem[3] + rim[3]) / 4;
                 circlePositionCamera.z = (upm[4] + lom[4] + lem[4] + rim[4]) / 4;
-                ROS_ERROR("x:%f,y:%f,z:%f",circlePositionCamera.x,circlePositionCamera.y,circlePositionCamera.z);
-                if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 6.0) circlePositionCamera.z -= 5.0;
-                else if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 5.0) circlePositionCamera.z -= 4.0;
+                // ROS_ERROR("cx:%f,cy:%f,cz:%f",circlePositionCamera.x,circlePositionCamera.y,circlePositionCamera.z);
+                // ROS_ERROR("left:%f,right:%f",lem[4],rim[4]);
+
+                // cv::Scalar color(0, 0, 255); // 蓝色 (BGR颜色)
+                // // 画一个点
+                // cv::circle(heat_map, circleImagePoints[0], 2, color, -1); // 5表示点的半径，-1表示填充点
+                // cv::circle(heat_map, circleImagePoints[1], 2, color, -1); // 5表示点的半径，-1表示填充点
+                // cv::circle(heat_map, circleImagePoints[2], 2, color, -1); // 5表示点的半径，-1表示填充点
+                // cv::circle(heat_map, circleImagePoints[3], 2, color, -1); // 5表示点的半径，-1表示填充点
+                
+                // std::vector<cv::Point3f> circlePointACVNet;
+                // if(pointcloud != nullptr) {
+                //     circlePointACVNet.push_back(
+                //         cv::Point3f(pointcloud[((int)upm[1]*640+(int)upm[0])*6 + 0],pointcloud[((int)upm[1]*640+(int)upm[0])*6 + 1],
+                //         pointcloud[((int)upm[1]*640+(int)upm[0])*6 + 2]));
+                //     circlePointACVNet.push_back(
+                //         cv::Point3f(pointcloud[((int)lom[1]*640+(int)lom[0])*6 + 0],pointcloud[((int)lom[1]*640+(int)lom[0])*6 + 1],
+                //         pointcloud[((int)lom[1]*640+(int)lom[0])*6 + 2]));
+                //     circlePointACVNet.push_back(
+                //         cv::Point3f(pointcloud[((int)lem[1]*640+(int)lem[0])*6 + 0],pointcloud[((int)lem[1]*640+(int)lem[0])*6 + 1],
+                //         pointcloud[((int)lem[1]*640+(int)lem[0])*6 + 2]));
+                //     circlePointACVNet.push_back(
+                //         cv::Point3f(pointcloud[((int)rim[1]*640+(int)rim[0])*6 + 0],pointcloud[((int)rim[1]*640+(int)rim[0])*6 + 1],
+                //         pointcloud[((int)rim[1]*640+(int)rim[0])*6 + 2]));
+                //     circlePositionACVNet.x = (circlePointACVNet[0].x + circlePointACVNet[1].x + circlePointACVNet[2].x + circlePointACVNet[3].x) / 4000;
+                //     circlePositionACVNet.y = (circlePointACVNet[0].y + circlePointACVNet[1].y + circlePointACVNet[2].y + circlePointACVNet[3].y) / 4000;
+                //     circlePositionACVNet.z = (circlePointACVNet[0].z + circlePointACVNet[1].z + circlePointACVNet[2].z + circlePointACVNet[3].z) / 4000;
+                //     // ROS_ERROR("x:%f,y:%f,z:%f",circlePositionACVNet.x,circlePositionACVNet.y,circlePositionACVNet.z);
+                // }
+                if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 7.0) circlePositionCamera.z -= 5.0;
+                else if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 6.0) circlePositionCamera.z -= 4.0;
+                else if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 5.0) circlePositionCamera.z -= 3.0;
                 
                 #ifdef TRUE_POSE_DEBUGE
                     Eigen::Quaterniond quaternion(drone_poses_true->pose.orientation.w, drone_poses_true->pose.orientation.x, drone_poses_true->pose.orientation.y, drone_poses_true->pose.orientation.z);
@@ -56,77 +86,79 @@ void uavControl::uavControlTask(void) {
                 circlePositionWorld.z = Pw(2);
                 if(circlePositionWorld.z < 0.2) circlePositionWorld.z = 0.2;
 
-                ego_target_pose.pose.position.x = circlePositionWorld.x;
-                ego_target_pose.pose.position.y = -circlePositionWorld.y;
-                ego_target_pose.pose.position.z = circlePositionWorld.z;
+                // if(abs(circlePositionCamera.x - circlePositionACVNet.x) < 1.0 && abs(circlePositionCamera.y - circlePositionACVNet.y) < 1.0 &&
+                //    abs(circlePositionCamera.z - circlePositionACVNet.z - 1.5) < 1.0) {
+                //     // std::vector<cv::Point3f> circlePointWorldAGVNet;
+                //     // for(int i=0; i < circlePointACVNet.size(); i++) {
+                //     //     Eigen::Vector4d Pc;
+                //     //     Pc << circlePointACVNet[i].z/1000, circlePointACVNet[i].x/1000, -circlePointACVNet[i].y/1000, 1.0;
+                //     //     Eigen::Vector4d Pw = Twb * Pc;
+                //     //     circlePointWorldAGVNet.push_back(cv::Point3f(Pw(0),Pw(1),Pw(2)));
+                //     // }
+                //     // ROS_ERROR("up,x:%f,y:%f,z:%f",circlePointWorldAGVNet[0].x,circlePointWorldAGVNet[0].y,circlePointWorldAGVNet[0].z);
+                //     // ROS_ERROR("down,x:%f,y:%f,z:%f",circlePointWorldAGVNet[1].x,circlePointWorldAGVNet[1].y,circlePointWorldAGVNet[1].z);
+                //     // ROS_ERROR("left,x:%f,y:%f,z:%f",circlePointWorldAGVNet[2].x,circlePointWorldAGVNet[2].y,circlePointWorldAGVNet[2].z);
+                //     // ROS_ERROR("right,x:%f,y:%f,z:%f",circlePointWorldAGVNet[3].x,circlePointWorldAGVNet[3].y,circlePointWorldAGVNet[3].z);
+                //     if(circlePointACVNet[2].z > circlePointACVNet[3].z) {
+                //         ROS_ERROR("left");
+                //     }
+                //     else {
+                //         ROS_ERROR("right");
+                //     }
+                //     cv::imshow("heat",heat_map);
+                //     cv::waitKey(1); 
+                // }
             }
         }
         
-        #ifdef TRUE_POSE_DEBUGE
-            double dx,dy,dz;
-            dx = abs(abs(ego_target_pose.pose.position.x) - abs(drone_poses_true->pose.position.x));
-            dy = abs(abs(ego_target_pose.pose.position.y) - abs(drone_poses_true->pose.position.y));
-            dz = abs(abs(ego_target_pose.pose.position.z) - abs(drone_poses_true->pose.position.z));
-            if(dx < 0.3 && dy < 0.3 && dz < 0.3)
-            {
-                circle_num+=1;
-                visual_detect_flag = 0;
+        if(uav_reached_location(ego_target_pose,visual_pose,0.5,0.5))  
+        {
+            if(pd_delay_flag == false) {
+                pd_delay_flag = true;
+                pd_delay_start_time = ros::Time::now().toSec();
             }
-        #else
-            if(uav_reached_location(ego_target_pose,visual_pose,0.3,0.3))  
-            {
-                if(pd_delay_flag == false) {
-                    pd_delay_flag = true;
-                    pd_delay_start_time = ros::Time::now().toSec();
-                }
-                circle_num+=1;
-                visual_detect_flag = 0;
+            circle_num+=1;
+            if(circle_num == 9) {
+                circle_num = 12;
             }
-        #endif
+            visual_detect_flag = 0;  
+        }
 
         if(visual_detect_flag) { //进入视觉模式
             if(circlePositionWorld.x!=0 && circlePositionWorld.y!=0 && circlePositionWorld.z!=0) {
-                // #ifdef TRUE_POSE_DEBUGE
-                //     ego_target_pose.pose.position.x = circle_poses_true->poses.at(circle_num).position.x;
-                //     ego_target_pose.pose.position.y = -circle_poses_true->poses.at(circle_num).position.y;
-                //     ego_target_pose.pose.position.z = circle_poses_true->poses.at(circle_num).position.z;
-                // #else
-                    ego_target_pose.pose.position.x = circlePositionWorld.x;
-                    ego_target_pose.pose.position.y = -circlePositionWorld.y;
-                    ego_target_pose.pose.position.z = circlePositionWorld.z;
-                // #endif
+                ego_target_pose.pose.position.x = circlePositionWorld.x;
+                ego_target_pose.pose.position.y = -circlePositionWorld.y;
+                ego_target_pose.pose.position.z = circlePositionWorld.z;
+                tf::Quaternion q1; 
+                tf::quaternionMsgToTF(visual_pose.pose.pose.orientation, q1);
+                double roll,pitch,yaw;
+                tf::Matrix3x3(q1).getRPY(roll, pitch, yaw); // rpy得是double
+                yaw = -yaw;
+                tf::Quaternion q2 = tf::createQuaternionFromRPY(roll, pitch, yaw);
+                ego_target_pose.pose.orientation.w = q2.getW();
+                ego_target_pose.pose.orientation.x = q2.getX();
+                ego_target_pose.pose.orientation.y = q2.getY();
+                ego_target_pose.pose.orientation.z = q2.getZ();
             }
         }
         else if ((visual_detect_flag == false)) {
-            #ifdef TRUE_POSE_DEBUGE
-                ego_target_pose.pose.position.x = circle_poses_ref->poses.at(circle_num).position.x;
-                ego_target_pose.pose.position.y = -circle_poses_ref->poses.at(circle_num).position.y;
-                ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z);
-                double drone_roll = 0, drone_pitch = 0, drone_yaw = circle_poses_ref->poses.at(circle_num).yaw;
-                double c1 = cos(drone_roll / 2);
-                double s1 = sin(drone_roll / 2);
-                double c2 = cos(drone_pitch / 2);
-                double s2 = sin(drone_pitch / 2);
-                double c3 = cos(drone_yaw / 2);
-                double s3 = sin(drone_yaw / 2);
-                ego_target_pose.pose.orientation.w = c1 * c2 * c3 + s1 * s2 * s3;
-                ego_target_pose.pose.orientation.x = s1 * c2 * c3 - c1 * s2 * s3;
-                ego_target_pose.pose.orientation.y = c1 * s2 * c3 + s1 * c2 * s3;
-                ego_target_pose.pose.orientation.z = c1 * c2 * s3 - s1 * s2 * c3;
-            #else
-                ego_target_pose.pose.position.x = circle_poses_ref->poses.at(circle_num).position.x ;
-                ego_target_pose.pose.position.y = -circle_poses_ref->poses.at(circle_num).position.y ;
-                ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z) ;
-                double circle_roll = 0, circle_pitch = 0, circle_yaw = circle_poses_ref->poses.at(circle_num).yaw;
-                tf::Quaternion circle_q = tf::createQuaternionFromRPY(circle_roll, circle_pitch, circle_yaw);
-                ego_target_pose.pose.orientation.w = circle_q.getW();
-                ego_target_pose.pose.orientation.x = circle_q.getX();
-                ego_target_pose.pose.orientation.y = circle_q.getY();
-                ego_target_pose.pose.orientation.z = circle_q.getZ();
-            #endif
+            ego_target_pose.pose.position.x = circle_poses_ref->poses.at(circle_num).position.x ;
+            ego_target_pose.pose.position.y = -circle_poses_ref->poses.at(circle_num).position.y ;
+            ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z) ;
+            double circle_roll = 0, circle_pitch = 0, circle_yaw = circle_poses_ref->poses.at(circle_num).yaw;
+            tf::Quaternion circle_q = tf::createQuaternionFromRPY(circle_roll, circle_pitch, circle_yaw);
+            ego_target_pose.pose.orientation.w = circle_q.getW();
+            ego_target_pose.pose.orientation.x = circle_q.getX();
+            ego_target_pose.pose.orientation.y = circle_q.getY();
+            ego_target_pose.pose.orientation.z = circle_q.getZ();
         }
-        ego_target_pose.header.frame_id = "world";
-        ego_goal_point_pub.publish(ego_target_pose);
+        
+        if(abs(ego_target_pose.pose.position.x) < 150 && abs(ego_target_pose.pose.position.y) < 150 && abs(ego_target_pose.pose.position.z) < 40) {
+            ego_target_pose.header.frame_id = "world";
+            ego_goal_point_pub.publish(ego_target_pose);
+            ROS_ERROR("circle_num:%d,egox:%f,egoy:%f,egoz:%f",circle_num,ego_target_pose.pose.position.x,ego_target_pose.pose.position.y,ego_target_pose.pose.position.z);
+        }
+        
         
         if(pd_delay_flag)
         {
@@ -257,7 +289,7 @@ std::vector<double> uavControl::detectCirclePosion(SelectPoint p)
     }
     //当检测面积足够大且无人机离参考位姿较近时才解算圈的相对位置
     std::vector<double> circleDetectMsg; //存储检测结果变量
-    if (circleSquareMax[0] > 1000.0 && circleSquareMax[1] > 1000.0 && circleSquareMax[0] < 14000.0 && circleSquareMax[1] < 14000.0 
+    if (circleSquareMax[0] > 1000.0 && circleSquareMax[1] > 1000.0 && circleSquareMax[0] < 20000.0 && circleSquareMax[1] < 20000.0 
         && uav_reached_location(ego_target_pose,visual_pose,12.0,12.0)) {  //矩形面积大于3000时计算矩形框内像素点的3D空间坐标位置
         // ORBPointsMathch(image_left,image_right,circle_detect_msg[0]);  //该方法先不用 等我回来调试
         visual_detect_flag = 1;
@@ -309,7 +341,7 @@ std::vector<double> uavControl::detectCirclePosion(SelectPoint p)
             return circleDetectMsg;
         }
         else {
-            ROS_ERROR("too far!!!");
+            // ROS_ERROR("too far!!!");
             std::vector<double> zero(5,0);
             return zero;
         }

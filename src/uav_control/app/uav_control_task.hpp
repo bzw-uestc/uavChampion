@@ -92,7 +92,8 @@ public:
     int drone_pose_true_flag = 0;
     std::vector<std::vector<float>> circle_detect_msg;  //外部vector 0存放左目结果 1存放右目结果
     geometry_msgs::PoseStampedConstPtr drone_poses_true; //仿真器无人机真实位姿
-    cv::Mat image_left,image_right; //无人机搭载的双目图像 外部传进来
+    cv::Mat image_left,image_right,image_depth,heat_map; //无人机搭载的双目图像 外部传进来
+    float *pointcloud;
     void uavControlTask(void);
 };
 
