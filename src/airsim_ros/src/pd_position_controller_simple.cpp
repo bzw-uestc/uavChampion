@@ -35,7 +35,7 @@ void PIDPositionController::initialize_ros()
 {
     vel_cmd_ = airsim_ros::VelCmd();
     // ROS params
-    update_control_every_n_sec = 0.006;
+    update_control_every_n_sec = 0.01;
 
     // ROS publishers
     // airsim_vel_cmd_world_frame_pub_ = nh_.advertise<airsim_ros::VelCmd>("/airsim_node/drone_1/vel_cmd_world_frame", 1);

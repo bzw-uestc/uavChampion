@@ -84,8 +84,8 @@ private:
     // void egoPath_callBack(const visualization_msgs::Marker& pos_cmds);
     void dronePosesTrue_callBack(const geometry_msgs::PoseStampedConstPtr& drone_poses);
     void droneVisualPose_callBack(const nav_msgs::Odometry& drone_vins_poses);
-    std::vector<double> detectCirclePosion(SelectPoint p);
-    bool uav_reached_location(geometry_msgs::PoseStamped ref,nav_msgs::Odometry fdb,double distance_dxy,double distance_dz);
+    std::vector<double> detectCirclePosion(SelectPoint p, int *circleTag);
+    bool uav_reached_location(geometry_msgs::PoseStamped ref,nav_msgs::Odometry fdb,double distance_dxyz);
 public:
     uavControl(ros::NodeHandle& nh);
     ~uavControl(){}

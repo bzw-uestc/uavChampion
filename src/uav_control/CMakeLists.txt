@@ -188,9 +188,9 @@ target_link_libraries(${PROJECT_NAME}_node
    onnxruntime
    #cudart
  )
- add_subdirectory("deep_image/StereoAlgorithms")
- set_target_properties(fastacvnet_plus_demo PROPERTIES ENABLE_EXPORTS ON)
- target_link_libraries(uav_control_node fastacvnet_plus_demo)
+#  add_subdirectory("deep_image/StereoAlgorithms")
+#  set_target_properties(fastacvnet_plus_demo PROPERTIES ENABLE_EXPORTS ON)
+#  target_link_libraries(uav_control_node fastacvnet_plus_demo)
 #############
 ## Install ##
 #############

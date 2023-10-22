@@ -28,8 +28,8 @@
 #include "NvInferPlugin.h"
 #include "NvInferRuntimeCommon.h"
 #include "NvOnnxParser.h"
-#include "../app/onnx2.hpp"
-#include "../deep_image/StereoAlgorithms/FastACVNet_plus/include/FastACVNet_plus_Algorithm.h"
+// #include "../app/onnx2.hpp"
+// #include "../deep_image/StereoAlgorithms/FastACVNet_plus/include/FastACVNet_plus_Algorithm.h"
 // #include"FastACVNet_plus_Algorithm.h"
 
 void image0_callback(const sensor_msgs::ImageConstPtr &color_msg);
@@ -79,15 +79,15 @@ int main(int argc, char** argv)
   // ROS_ERROR("123");
 	// YOLOv5 yolo_model(yolo_nets);
 
-  char* stereo_calibration_path="/home/uestc/uavChampion/src/uav_control/deep_image/StereoAlgorithms/FastACVNet_plus/test/StereoCalibrationUAV.yml";
-  char* strero_engine_path="/home/uestc/uavChampion/src/uav_control/deep_image/StereoAlgorithms/FastACVNet_plus/test/fast_acvnet_plus_generalization_opset16_480x640.onnx";
-  void * fastacvnet=Initialize(strero_engine_path,0,stereo_calibration_path);
+  // char* stereo_calibration_path="/home/uestc/uavChampion/src/uav_control/deep_image/StereoAlgorithms/FastACVNet_plus/test/StereoCalibrationUAV.yml";
+  // char* strero_engine_path="/home/uestc/uavChampion/src/uav_control/deep_image/StereoAlgorithms/FastACVNet_plus/test/fast_acvnet_plus_generalization_opset16_480x640.onnx";
+  // void * fastacvnet=Initialize(strero_engine_path,0,stereo_calibration_path);
 
 
   uavControl drone0(nh);
   ros::Rate uavControl_loop_rate(20);//设置循环频率，20Hz；也可以设为其他频率，如1为1Hz
   std::thread uavControl_thread([&]() {
-    while(1) {
+    while(ros::ok()) {
       drone0.uavControlTask();
       uavControl_loop_rate.sleep();
     }
