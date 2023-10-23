@@ -46,6 +46,7 @@ void PIDPositionController::initialize_ros()
     #else
       visual_odom_sub_ = nh_.subscribe("/vins_fusion/imu_propagate_for_pd", 1, &PIDPositionController::visual_odom_cb, this);
     #endif
+    drone_max_vel_sub_ = nh_.subscribe("/drone_1/max_vel", 1, &PIDPositionController::max_vel_cb, this);
     //home_geopoint_sub_ = nh_.subscribe("/airsim_node/home_geo_point", 50, &PIDPositionController::home_geopoint_cb, this);
     // todo publish this under global nodehandle / "airsim node" and hide it from user
     local_position_goal_srvr_ = nh_.advertiseService("/airsim_node/local_position_goal", &PIDPositionController::local_position_goal_srv_cb, this);
@@ -85,6 +86,12 @@ void PIDPositionController::visual_odom_cb(const nav_msgs::Odometry& odom_msg)
     curr_position_.yaw = (utils::get_yaw_from_quat_msg(odom_msg.pose.pose.orientation));
     // ROS_INFO("%f %f %f %f", odom_msg.orientation.w, odom_msg.orientation.x,odom_msg.orientation.y,odom_msg.orientation.z);
     // ROS_ERROR("GET pose %f %f %f %f", curr_position_.x, curr_position_.y, curr_position_.z, curr_position_.yaw);
+}
+
+void PIDPositionController::max_vel_cb(const std_msgs::Float64 max_vel)
+{
+    constraints_.max_vel_horz_abs = max_vel.data;
+    constraints_.max_vel_vert_abs = max_vel.data;
 }
 
 // todo maintain internal representation as eigen vec?
@@ -224,7 +231,7 @@ void PIDPositionController::compute_control_cmd()
 void PIDPositionController::enforce_dynamic_constraints()
 {
     double vel_norm_horz = sqrt((vel_cmd_.twist.linear.x * vel_cmd_.twist.linear.x) + (vel_cmd_.twist.linear.y * vel_cmd_.twist.linear.y));
-
+    // ROS_ERROR("horz:%f,vert%f",constraints_.max_vel_horz_abs,constraints_.max_vel_vert_abs);
     if (vel_norm_horz > constraints_.max_vel_horz_abs) {
         vel_cmd_.twist.linear.x = (vel_cmd_.twist.linear.x / vel_norm_horz) * constraints_.max_vel_horz_abs;
         vel_cmd_.twist.linear.y = (vel_cmd_.twist.linear.y / vel_norm_horz) * constraints_.max_vel_horz_abs;
@@ -246,5 +253,5 @@ void PIDPositionController::enforce_dynamic_constraints()
 void PIDPositionController::publish_control_cmd()
 {
     airsim_vel_cmd_body_frame_pub_.publish(vel_cmd_);
-    ROS_INFO("velcmd: %f %f %f %f", vel_cmd_.twist.linear.x, vel_cmd_.twist.linear.y, vel_cmd_.twist.linear.z, vel_cmd_.twist.angular.z);
+    // ROS_ERROR("velcmd: %f %f %f %f", vel_cmd_.twist.linear.x, vel_cmd_.twist.linear.y, vel_cmd_.twist.linear.z, vel_cmd_.twist.angular.z);
 }

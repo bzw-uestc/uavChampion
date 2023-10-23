@@ -27,6 +27,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <tf/transform_listener.h>
+#include "std_msgs/Float64.h"
 
 // #define TF_DEBUG
 #define PD_DEBUGE
@@ -34,8 +35,10 @@
 // #define DEBUGE1
 #define ObstacleCircleRadius 0.75
 #define ObstacleCircleNum    17
-#define ODOM_INIT_TIME 3
+#define ODOM_INIT_TIME 5
 #define PD_DELAY_TIME  1
+#define MAX_VEL_NORMAL 3.0
+#define MAX_VEL_DETECT 1.5
 
 
 typedef struct {
@@ -56,7 +59,7 @@ private:
     geometry_msgs::PoseStamped ego_target_pose;
     tf::TransformListener listener;
     ros::ServiceClient setGoalPosition_client,sim_takeoff_client,sim_reset_client;
-    ros::Publisher drone_vel_pub,drone_pose_pub,drone_true_odom_pub,ego_goal_point_pub;
+    ros::Publisher drone_vel_pub,drone_pose_pub,drone_true_odom_pub,ego_goal_point_pub,drone_max_vel_pub;
     ros::Subscriber drone_true_odom_sub,circle_poses_ref_sub,circle_poses_true_sub,tree_poses_true_sub, pd_vel_sub; //仿真器发送的话题
 
     airsim_ros::CirclePosesConstPtr circle_poses_ref;   //障碍圈位姿参考值
@@ -73,8 +76,10 @@ private:
     bool odom_init_flag = 0;
     bool visual_detect_flag = 0;
     bool pd_delay_flag = 0;
-    double pd_delay_start_time;
-    double odom_init_start_time; //仿真器复位后的时间，里程计开始初始化的时间
+    bool aim_flag = 0;
+    double pd_delay_start_time = 0;
+    double odom_init_start_time = 0; //仿真器复位后的时间，里程计开始初始化的时间
+    float drone_max_vel = 1.5;
     void uavSetGoalPostion(void);
     void circlePosesRef_callBack(const airsim_ros::CirclePosesConstPtr& circle);
     void circlePosesTrue_callBack(const airsim_ros::CirclePosesConstPtr& circle);

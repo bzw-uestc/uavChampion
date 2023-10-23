@@ -37,7 +37,7 @@ namespace ego_planner
                                  const std::vector<Eigen::Vector3d> &waypoints, const Eigen::Vector3d &end_vel, const Eigen::Vector3d &end_acc);
 
     void initPlanModules(ros::NodeHandle &nh, PlanningVisualization::Ptr vis = NULL);
-
+    void setMaxVel(const float max_vel);
     void deliverTrajToOptimizer(void) { bspline_optimizer_->setSwarmTrajs(&swarm_trajs_buf_); };
 
     void setDroneIdtoOpt(void) { bspline_optimizer_->setDroneId(pp_.drone_id); }

@@ -17,7 +17,7 @@ nvcc -V
 # cd ..
 
 source devel/setup.bash
-roslaunch uav_control run_all.launch & sleep 2
+roslaunch uav_control run_all.launch & sleep 4
 roslaunch uav_control run_vins.launch &
 sleep 0.1
 wait

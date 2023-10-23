@@ -16,7 +16,7 @@
 #include <airsim_ros/GPSYaw.h>
 #include <math_common.h>
 #include <utils.h>
-
+#include "std_msgs/Float64.h"
 
 // #define TRUE_POSE_DEBUGE
     // todo nicer api
@@ -81,6 +81,7 @@ public:
     // ROS subscriber callbacks
     void airsim_odom_cb(const geometry_msgs::PoseStamped& odom_msg);
     void visual_odom_cb(const nav_msgs::Odometry& odom_msg);
+    void max_vel_cb(const std_msgs::Float64 max_vel);
     //void home_geopoint_cb(const airsim_ros::GPSYaw& gps_msg);
 
     void update_control_cmd_timer_cb(const ros::TimerEvent& event);
@@ -92,7 +93,7 @@ public:
     void enforce_dynamic_constraints();
     void publish_control_cmd();
     void check_reached_goal();
-
+    
 private:
     // msr::airlib::GeodeticConverter geodetic_converter_;
     static constexpr bool use_eth_lib_for_geodetic_conv_ = true;
@@ -124,6 +125,7 @@ private:
     ros::Publisher airsim_vel_cmd_body_frame_pub_;
     ros::Subscriber airsim_odom_sub_;
     ros::Subscriber visual_odom_sub_;
+    ros::Subscriber drone_max_vel_sub_;
     ros::Subscriber home_geopoint_sub_;
     ros::ServiceServer local_position_goal_srvr_;
     ros::ServiceServer local_position_goal_override_srvr_;

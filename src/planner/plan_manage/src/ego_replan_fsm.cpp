@@ -56,6 +56,8 @@ namespace ego_planner
     broadcast_bspline_pub_ = nh.advertise<traj_utils::Bspline>("planning/broadcast_bspline_from_planner", 10);
     broadcast_bspline_sub_ = nh.subscribe("planning/broadcast_bspline_to_planner", 100, &EGOReplanFSM::BroadcastBsplineCallback, this, ros::TransportHints().tcpNoDelay());
 
+    drone_max_vel_sub_ = nh.subscribe("/drone_1/max_vel", 10, &EGOReplanFSM::BroadcastMaxVelCallback, this);
+
     bspline_pub_ = nh.advertise<traj_utils::Bspline>("planning/bspline", 10);
     data_disp_pub_ = nh.advertise<traj_utils::DataDisp>("planning/data_display", 100);
 
@@ -246,6 +248,10 @@ namespace ego_planner
     odom_orient_.z() = msg->pose.pose.orientation.z;
 
     have_odom_ = true;
+  }
+
+  void EGOReplanFSM::BroadcastMaxVelCallback(const std_msgs::Float64 &msg) {
+    planner_manager_->setMaxVel(msg.data);
   }
 
   void EGOReplanFSM::BroadcastBsplineCallback(const traj_utils::BsplinePtr &msg)

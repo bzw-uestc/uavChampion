@@ -93,6 +93,7 @@ namespace ego_planner
     void setEnvironment(const GridMap::Ptr &map);
     void setEnvironment(const GridMap::Ptr &map, const fast_planner::ObjPredictor::Ptr mov_obj);
     void setParam(ros::NodeHandle &nh);
+    void setMaxVel(const float max_vel);
     Eigen::MatrixXd BsplineOptimizeTraj(const Eigen::MatrixXd &points, const double &ts,
                                         const int &cost_function, int max_num_id, int max_time_id);
 

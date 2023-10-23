@@ -42,6 +42,9 @@ namespace ego_planner
     visualization_ = vis;
   }
 
+  void EGOPlannerManager::setMaxVel(const float max_vel) {
+    bspline_optimizer_->setMaxVel(max_vel);
+  }
   // !SECTION
 
   // SECTION rebond replanning
@@ -571,4 +574,6 @@ namespace ego_planner
     UniformBspline::parameterizeToBspline(dt, point_set, start_end_derivative, ctrl_pts);
   }
 
+  
 } // namespace ego_planner
+

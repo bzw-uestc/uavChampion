@@ -13,7 +13,8 @@ void uavControl::uavControlTask(void) {
     }
     else if(!takeoff_flag) {
         sim_takeoff.request.waitOnLastTask = 1;
-        takeoff_flag = sim_takeoff_client.call(sim_takeoff);
+        // takeoff_flag = sim_takeoff_client.call(sim_takeoff);
+        takeoff_flag = true;
     }
     else if(circle_msg_flag) { //circle_msg_flag
         cv::Point3f circlePositionWorld;
@@ -33,7 +34,7 @@ void uavControl::uavControlTask(void) {
                 }
             }
             //////////////////////////////当检测面积足够大且无人机离参考位姿较近时才解算圈的世界坐标////////////////////////////////////
-            if (circleSquareMax[0] > 1200.0 && circleSquareMax[1] > 1200.0 && circleSquareMax[0] < 20000.0 && circleSquareMax[1] < 20000.0 
+            if (circleSquareMax[0] > 1000.0 && circleSquareMax[1] > 1000.0 && circleSquareMax[0] < 20000.0 && circleSquareMax[1] < 20000.0 
             && uav_reached_location(ego_target_pose,visual_pose,10.0)){
                 std::vector<double> upm = detectCirclePosion(UpperMidpoint,circleTag);
                 std::vector<double> lom = detectCirclePosion(LowerMidpoint,circleTag);
@@ -51,6 +52,12 @@ void uavControl::uavControlTask(void) {
                     else if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 6.0) circlePositionCamera.z -= 4.0;
                     else if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 5.0) circlePositionCamera.z -= 3.0;
                     
+                    if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 )) {
+                        aim_flag = 1;
+                    }
+                    else {
+                        aim_flag = 0;
+                    }
                     #ifdef TRUE_POSE_DEBUGE
                         Eigen::Quaterniond quaternion(drone_poses_true->pose.orientation.w, drone_poses_true->pose.orientation.x, drone_poses_true->pose.orientation.y, drone_poses_true->pose.orientation.z);
                         Eigen::Vector3d translation(drone_poses_true->pose.position.x, drone_poses_true->pose.position.y, -drone_poses_true->pose.position.z);
@@ -107,6 +114,8 @@ void uavControl::uavControlTask(void) {
                 ego_target_pose.pose.orientation.y = q2.getY();
                 ego_target_pose.pose.orientation.z = q2.getZ();
             }
+            if(drone_max_vel > MAX_VEL_DETECT) drone_max_vel -= 0.1;
+            if(drone_max_vel < MAX_VEL_DETECT) drone_max_vel = MAX_VEL_DETECT;
         }
         else if ((visual_detect_flag == false)) {
             ego_target_pose.pose.position.x = circle_poses_ref->poses.at(circle_num).position.x ;
@@ -129,11 +138,16 @@ void uavControl::uavControlTask(void) {
             ego_target_pose.pose.orientation.x = circle_q.getX();
             ego_target_pose.pose.orientation.y = circle_q.getY();
             ego_target_pose.pose.orientation.z = circle_q.getZ();
+            if(drone_max_vel > MAX_VEL_NORMAL) drone_max_vel = MAX_VEL_NORMAL;
+            if(drone_max_vel < MAX_VEL_NORMAL) drone_max_vel += 0.1;
         }
         
-        if(abs(ego_target_pose.pose.position.x) < 150 && abs(ego_target_pose.pose.position.y) < 150 && abs(ego_target_pose.pose.position.z) < 40) {
+        if(abs(ego_target_pose.pose.position.x) < 200 && abs(ego_target_pose.pose.position.y) < 200 && abs(ego_target_pose.pose.position.z) < 45) {
             ego_target_pose.header.frame_id = "world";
             ego_goal_point_pub.publish(ego_target_pose);
+            std_msgs::Float64 drone_max_vel_msgs;
+            drone_max_vel_msgs.data = drone_max_vel;
+            drone_max_vel_pub.publish(drone_max_vel_msgs);
             // ROS_ERROR("circle_num:%d,egox:%f,egoy:%f,egoz:%f",circle_num,ego_target_pose.pose.position.x,ego_target_pose.pose.position.y,ego_target_pose.pose.position.z);
         }
         
@@ -150,7 +164,9 @@ void uavControl::uavControlTask(void) {
             posCmd.request.x = posture_cmd.x;
             posCmd.request.y = -posture_cmd.y;
             posCmd.request.z = -posture_cmd.z;
-            posCmd.request.yaw = -posture_cmd.yaw;
+            if(!aim_flag) {  //too far no yaw
+                posCmd.request.yaw = -posture_cmd.yaw;
+            }
             setGoalPosition_client.call(posCmd);
         }
     }
@@ -171,9 +187,10 @@ uavControl::uavControl(ros::NodeHandle &nh) {
     // visual_odom_sub = nh.subscribe("/vins_fusion/imu_propagate",1,&uavControl::droneVisualPose_callBack,this);
     visual_odom_sub = nh.subscribe("/vins_fusion/imu_propagate_for_pd",1,&uavControl::droneVisualPose_callBack,this);
     pd_vel_sub = nh.subscribe("/airsim_node/drone_1/vel_cmd_body_frame_yaw",1,&uavControl::pdVelPose_callBack,this);
-
+    
     drone_vel_pub = nh.advertise<airsim_ros::VelCmd>("/airsim_node/drone_1/vel_cmd_body_frame", 10);
     drone_pose_pub = nh.advertise<airsim_ros::PoseCmd>("/airsim_node/drone_1/pose_cmd_body_frame", 10);
+    drone_max_vel_pub = nh.advertise<std_msgs::Float64>("/drone_1/max_vel",10);
     setGoalPosition_client = nh.serviceClient<airsim_ros::SetLocalPosition>("/airsim_node/local_position_goal/override");
     
     sim_takeoff_client = nh.serviceClient<airsim_ros::Takeoff>("/airsim_node/drone_1/takeoff");

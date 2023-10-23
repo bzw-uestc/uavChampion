@@ -20,6 +20,11 @@ namespace ego_planner
     nh.param("optimization/order", order_, 3);
   }
 
+  void BsplineOptimizer::setMaxVel(const float max_vel) {
+    this->max_vel_ = max_vel;
+    // ROS_ERROR("ego_max_vel:%f",this->max_vel_);
+  }
+
   void BsplineOptimizer::setEnvironment(const GridMap::Ptr &map)
   {
     this->grid_map_ = map;
@@ -1126,7 +1131,7 @@ namespace ego_planner
 
     ts = bspline_interval_;
     ts_inv2 = 1 / ts / ts;
-
+    // ROS_ERROR("egomax:%f",max_vel_);
     /* velocity feasibility */
     for (int i = 0; i < q.cols() - 1; i++)
     {

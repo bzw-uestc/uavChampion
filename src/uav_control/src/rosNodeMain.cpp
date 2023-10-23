@@ -43,13 +43,11 @@ cv::Mat heatmap(cv::Mat&disparity);
 
 std::queue<sensor_msgs::ImageConstPtr> img_buf0;
 std::queue<sensor_msgs::ImageConstPtr> img_buf1; //stereo_img
-std::queue<sensor_msgs::ImageConstPtr> img_buf0_ACVNet;
-std::queue<sensor_msgs::ImageConstPtr> img_buf1_ACVNet; //stereo_img
 
 std::queue<geometry_msgs::Pose::ConstPtr> gps_buf;
 sensor_msgs::PointCloud2 rosPointCloud;
 
-int cnt_i = 0, cnt_j = 0;
+int cnt_i = 500, cnt_j = 0;
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "uav_control_node");
@@ -93,9 +91,10 @@ int main(int argc, char** argv)
     }
   });
 
-
+  bool sync_flag = false;
   std::thread msgProcess_thread([&]() {
     while(1) {
+      if(sync_flag) ROS_ERROR("sync_error1");
       if(!img_buf0.empty() && !img_buf1.empty()) { //!img_buf0.empty() && !img_buf1.empty()   color_msg_left != nullptr && color_msg_right != nullptr
         auto start = std::chrono::system_clock::now();
         sensor_msgs::ImageConstPtr color_msg0 = nullptr;
@@ -104,15 +103,20 @@ int main(int argc, char** argv)
         color_msg1 = img_buf1.front();
         double t0 = color_msg0->header.stamp.toSec();
         double t1 = color_msg1->header.stamp.toSec();
+        if(sync_flag) ROS_ERROR("sync_error");
         // ROS_ERROR("t0:%f,t1:%f",t0,t1);
         if(t0 - t1 >= 0.005) {
           img_buf1.pop();
           ROS_ERROR("pop img1");
+          ROS_ERROR("t0:%f,t1:%f",t0,t1);
+          sync_flag = true;
           break;
         } 
         else if(t1 - t0 >= 0.005) {
           img_buf0.pop();
           ROS_ERROR("pop img0");
+          ROS_ERROR("t0:%f,t1:%f",t0,t1);
+          sync_flag = true;
           break;
         }
         else { //相机时间同步
@@ -159,11 +163,11 @@ int main(int argc, char** argv)
           // cnt_j++;
           // if(cnt_j > 5) {
           //   cnt_j = 0;
-          //   std::string name_left = "/home/uestc/uavChampion/left/" + std::to_string(cnt_i) + ".jpg";
-          //   std::string name_right = "/home/uestc/uavChampion/right/" + std::to_string(cnt_i) + ".jpg";
+          //   std::string name_left = "/home/uestc/bzw_ws/uavChampion/left/" + std::to_string(cnt_i) + ".jpg";
+          //   std::string name_right = "/home/uestc/bzw_ws/uavChampion/right/" + std::to_string(cnt_i) + ".jpg";
           //   cnt_i++;
           //   cv::imwrite(name_left, ptr0->image);
-          //   cv::imwrite(name_right, ptr1->image);
+          //   // cv::imwrite(name_right, ptr1->image);
           // }
 
           /////////////////////////////////tensorRT////////////////////////////////////////////////////////////
@@ -284,18 +288,16 @@ int main(int argc, char** argv)
 
 void image0_callback(const sensor_msgs::ImageConstPtr& color_msg) {
   img_buf0.emplace(color_msg);
-  img_buf0_ACVNet.emplace(color_msg);
   // ROS_INFO("receive image0");
 }
 
 void image1_callback(const sensor_msgs::ImageConstPtr& color_msg) {
   img_buf1.emplace(color_msg);
-  img_buf1_ACVNet.emplace(color_msg);
   // ROS_INFO("receive image1");
 }
 
 void gpsCallback(const geometry_msgs::Pose::ConstPtr& gps_msg) {
-  gps_buf.emplace(gps_msg);
+  // gps_buf.emplace(gps_msg);buf.emplace(gps_msg);
   // ROS_INFO("receive gps_msg");
 }
 

@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge_455
   geometry_msgs
   nav_msgs
+  std_msgs
   pcl_ros
   quadrotor_msgs
   roscpp
@@ -116,7 +117,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES uav_control
-  CATKIN_DEPENDS cv_bridge_455 geometry_msgs nav_msgs pcl_ros quadrotor_msgs roscpp sensor_msgs std_srvs
+  CATKIN_DEPENDS cv_bridge_455 geometry_msgs nav_msgs std_msgs pcl_ros quadrotor_msgs roscpp sensor_msgs std_srvs
 #  DEPENDS system_lib
 )
 
