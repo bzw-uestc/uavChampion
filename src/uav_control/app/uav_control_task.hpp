@@ -38,7 +38,7 @@
 #define ODOM_INIT_TIME 3
 #define PD_DELAY_TIME  1
 #define MAX_VEL_NORMAL 3.0
-#define MAX_VEL_DETECT 2.0
+#define MAX_VEL_DETECT 1.5
 
 
 typedef struct {

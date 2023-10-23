@@ -32,7 +32,7 @@ void uavControl::uavControlTask(void) {
                     }
                 }
             }
-            if(circleSquareMax[0] > 700.0 && circleSquareMax[1] > 700.0) {
+            if(circleSquareMax[0] > 1000.0 && circleSquareMax[1] > 1000.0) {
                 drone_slowly_flag = true;
                 if(drone_max_vel > MAX_VEL_DETECT) drone_max_vel -= 0.1;
                 if(drone_max_vel < MAX_VEL_DETECT) drone_max_vel = MAX_VEL_DETECT;
