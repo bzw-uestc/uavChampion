@@ -34,14 +34,9 @@ void uavControl::uavControlTask(void) {
             }
             if(circleSquareMax[0] > 1000.0 && circleSquareMax[1] > 1000.0) {
                 drone_slowly_flag = true;
-                if(drone_max_vel > MAX_VEL_DETECT) drone_max_vel -= 0.1;
-                if(drone_max_vel < MAX_VEL_DETECT) drone_max_vel = MAX_VEL_DETECT;
+                
             }
-            else {
-                drone_slowly_flag = false;
-                if(drone_max_vel < MAX_VEL_NORMAL) drone_max_vel += 0.1;
-                if(drone_max_vel > MAX_VEL_NORMAL) drone_max_vel = MAX_VEL_NORMAL;
-            }
+            
             //////////////////////////////当检测面积足够大且无人机离参考位姿较近时才解算圈的世界坐标////////////////////////////////////
             if (circleSquareMax[0] > 1000.0 && circleSquareMax[1] > 1000.0 && circleSquareMax[0] < 20000.0 && circleSquareMax[1] < 20000.0 
             && uav_reached_location(ego_target_pose,visual_pose,10.0)){
@@ -100,6 +95,7 @@ void uavControl::uavControlTask(void) {
                 pd_delay_start_time = ros::Time::now().toSec();
             }
             circle_num+=1;
+            drone_slowly_flag = 0;
             if(circle_num == 9) {
                 circle_num = 12;
             }
@@ -150,12 +146,21 @@ void uavControl::uavControlTask(void) {
             
         }
         
+        if(drone_slowly_flag) {
+            if(drone_max_vel > MAX_VEL_DETECT) drone_max_vel -= 0.1;
+            if(drone_max_vel < MAX_VEL_DETECT) drone_max_vel = MAX_VEL_DETECT;
+        }
+        else {
+            if(drone_max_vel < MAX_VEL_NORMAL) drone_max_vel += 0.1;
+            if(drone_max_vel > MAX_VEL_NORMAL) drone_max_vel = MAX_VEL_NORMAL;
+        }
         if(abs(ego_target_pose.pose.position.x) < 200 && abs(ego_target_pose.pose.position.y) < 200 && abs(ego_target_pose.pose.position.z) < 45) {
             ego_target_pose.header.frame_id = "world";
             ego_goal_point_pub.publish(ego_target_pose);
             std_msgs::Float64 drone_max_vel_msgs;
             drone_max_vel_msgs.data = drone_max_vel;
             drone_max_vel_pub.publish(drone_max_vel_msgs);
+            ROS_ERROR("max_vel%f",drone_max_vel);
             // ROS_ERROR("circle_num:%d,egox:%f,egoy:%f,egoz:%f",circle_num,ego_target_pose.pose.position.x,ego_target_pose.pose.position.y,ego_target_pose.pose.position.z);
         }
         
