@@ -18,6 +18,7 @@ namespace ego_planner
 
     nh.param("manager/max_vel", pp_.max_vel_, -1.0);
     nh.param("manager/max_acc", pp_.max_acc_, -1.0);
+    
     nh.param("manager/max_jerk", pp_.max_jerk_, -1.0);
     nh.param("manager/feasibility_tolerance", pp_.feasibility_tolerance_, 0.0);
     nh.param("manager/control_points_distance", pp_.ctrl_pt_dist, -1.0);
@@ -43,7 +44,9 @@ namespace ego_planner
   }
 
   void EGOPlannerManager::setMaxVel(const float max_vel) {
-    bspline_optimizer_->setMaxVel(max_vel);
+    // bspline_optimizer_->setMaxVel(max_vel);
+    pp_.max_vel_ = max_vel - 0.5;
+    // ROS_ERROR("max%f",pp_.max_vel_);
   }
   // !SECTION
 

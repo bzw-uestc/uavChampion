@@ -35,10 +35,10 @@
 // #define DEBUGE1
 #define ObstacleCircleRadius 0.75
 #define ObstacleCircleNum    17
-#define ODOM_INIT_TIME 5
+#define ODOM_INIT_TIME 3
 #define PD_DELAY_TIME  1
 #define MAX_VEL_NORMAL 3.0
-#define MAX_VEL_DETECT 1.5
+#define MAX_VEL_DETECT 2.0
 
 
 typedef struct {
@@ -77,6 +77,7 @@ private:
     bool visual_detect_flag = 0;
     bool pd_delay_flag = 0;
     bool aim_flag = 0;
+    bool drone_slowly_flag = 0;
     double pd_delay_start_time = 0;
     double odom_init_start_time = 0; //仿真器复位后的时间，里程计开始初始化的时间
     float drone_max_vel = 1.5;

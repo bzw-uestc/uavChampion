@@ -1,5 +1,7 @@
 #include "bspline_opt/bspline_optimizer.h"
 #include "bspline_opt/gradient_descent_optimizer.h"
+#include <traj_utils/planning_visualization.h>
+
 // using namespace std;
 
 namespace ego_planner
@@ -525,6 +527,7 @@ namespace ego_planner
       if (a_star_->AstarSearch(/*(in-out).norm()/10+0.05*/ 0.1, in, out))
       {
         a_star_pathes.push_back(a_star_->getPath());
+        // ego_planner::PlanningVisualization::displayAStarList(a_star_pathes);
       }
       else
       {
@@ -533,6 +536,7 @@ namespace ego_planner
         return blank_ret;
       }
     }
+
 
     /*** calculate bounds ***/
     int id_low_bound, id_up_bound;

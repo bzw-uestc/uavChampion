@@ -91,10 +91,8 @@ int main(int argc, char** argv)
     }
   });
 
-  bool sync_flag = false;
   std::thread msgProcess_thread([&]() {
     while(1) {
-      if(sync_flag) ROS_ERROR("sync_error1");
       if(!img_buf0.empty() && !img_buf1.empty()) { //!img_buf0.empty() && !img_buf1.empty()   color_msg_left != nullptr && color_msg_right != nullptr
         auto start = std::chrono::system_clock::now();
         sensor_msgs::ImageConstPtr color_msg0 = nullptr;
@@ -103,21 +101,16 @@ int main(int argc, char** argv)
         color_msg1 = img_buf1.front();
         double t0 = color_msg0->header.stamp.toSec();
         double t1 = color_msg1->header.stamp.toSec();
-        if(sync_flag) ROS_ERROR("sync_error");
         // ROS_ERROR("t0:%f,t1:%f",t0,t1);
         if(t0 - t1 >= 0.005) {
           img_buf1.pop();
           ROS_ERROR("pop img1");
           ROS_ERROR("t0:%f,t1:%f",t0,t1);
-          sync_flag = true;
-          break;
         } 
         else if(t1 - t0 >= 0.005) {
           img_buf0.pop();
           ROS_ERROR("pop img0");
           ROS_ERROR("t0:%f,t1:%f",t0,t1);
-          sync_flag = true;
-          break;
         }
         else { //相机时间同步
           img_buf0.pop();

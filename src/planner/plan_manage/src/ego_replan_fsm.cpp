@@ -811,6 +811,7 @@ namespace ego_planner
 
       /* 3. publish traj for visualization */
       visualization_->displayOptimalList(info->position_traj_.get_control_points(), 0);
+      
     }
 
     return plan_and_refine_success;

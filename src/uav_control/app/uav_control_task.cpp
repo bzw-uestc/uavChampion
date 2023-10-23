@@ -13,8 +13,7 @@ void uavControl::uavControlTask(void) {
     }
     else if(!takeoff_flag) {
         sim_takeoff.request.waitOnLastTask = 1;
-        // takeoff_flag = sim_takeoff_client.call(sim_takeoff);
-        takeoff_flag = true;
+        takeoff_flag = sim_takeoff_client.call(sim_takeoff);
     }
     else if(circle_msg_flag) { //circle_msg_flag
         cv::Point3f circlePositionWorld;
@@ -32,6 +31,16 @@ void uavControl::uavControlTask(void) {
                         circleTag[i] = j;  //标记第几个圈是最大面积圈
                     }
                 }
+            }
+            if(circleSquareMax[0] > 700.0 && circleSquareMax[1] > 700.0) {
+                drone_slowly_flag = true;
+                if(drone_max_vel > MAX_VEL_DETECT) drone_max_vel -= 0.1;
+                if(drone_max_vel < MAX_VEL_DETECT) drone_max_vel = MAX_VEL_DETECT;
+            }
+            else {
+                drone_slowly_flag = false;
+                if(drone_max_vel < MAX_VEL_NORMAL) drone_max_vel += 0.1;
+                if(drone_max_vel > MAX_VEL_NORMAL) drone_max_vel = MAX_VEL_NORMAL;
             }
             //////////////////////////////当检测面积足够大且无人机离参考位姿较近时才解算圈的世界坐标////////////////////////////////////
             if (circleSquareMax[0] > 1000.0 && circleSquareMax[1] > 1000.0 && circleSquareMax[0] < 20000.0 && circleSquareMax[1] < 20000.0 
@@ -114,8 +123,7 @@ void uavControl::uavControlTask(void) {
                 ego_target_pose.pose.orientation.y = q2.getY();
                 ego_target_pose.pose.orientation.z = q2.getZ();
             }
-            if(drone_max_vel > MAX_VEL_DETECT) drone_max_vel -= 0.1;
-            if(drone_max_vel < MAX_VEL_DETECT) drone_max_vel = MAX_VEL_DETECT;
+            
         }
         else if ((visual_detect_flag == false)) {
             ego_target_pose.pose.position.x = circle_poses_ref->poses.at(circle_num).position.x ;
@@ -138,8 +146,8 @@ void uavControl::uavControlTask(void) {
             ego_target_pose.pose.orientation.x = circle_q.getX();
             ego_target_pose.pose.orientation.y = circle_q.getY();
             ego_target_pose.pose.orientation.z = circle_q.getZ();
-            if(drone_max_vel > MAX_VEL_NORMAL) drone_max_vel = MAX_VEL_NORMAL;
-            if(drone_max_vel < MAX_VEL_NORMAL) drone_max_vel += 0.1;
+            
+            
         }
         
         if(abs(ego_target_pose.pose.position.x) < 200 && abs(ego_target_pose.pose.position.y) < 200 && abs(ego_target_pose.pose.position.z) < 45) {
