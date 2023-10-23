@@ -80,7 +80,7 @@ private:
     bool drone_slowly_flag = 0;
     double pd_delay_start_time = 0;
     double odom_init_start_time = 0; //仿真器复位后的时间，里程计开始初始化的时间
-    float drone_max_vel = 1.5;
+    float drone_max_vel = MAX_VEL_NORMAL;
     void uavSetGoalPostion(void);
     void circlePosesRef_callBack(const airsim_ros::CirclePosesConstPtr& circle);
     void circlePosesTrue_callBack(const airsim_ros::CirclePosesConstPtr& circle);
