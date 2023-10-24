@@ -155,11 +155,11 @@ void uavControl::uavControlTask(void) {
                 ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z);
             }
             else if(circle_num == 15) {
-                ego_target_pose.pose.position.x = circle_poses_ref->poses.at(circle_num-1).position.x+10;
+                ego_target_pose.pose.position.x = circle_poses_ref->poses.at(circle_num).position.x-20;
                 ego_target_pose.pose.position.y = -(circle_poses_ref->poses.at(circle_num).position.y+10);
                 ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z);
             }
-            
+    
             if(circle_num >= 12) circle_type = 1; //只识别红圈
             else if(circle_num >= 5) circle_type = 0;  //只识别黄圈
             else circle_type = 1;
