@@ -37,9 +37,14 @@
 #define ObstacleCircleNum    17
 #define ODOM_INIT_TIME 3
 #define PD_DELAY_TIME  1
+<<<<<<< HEAD
 #define MAX_VEL_FAST 3.5
 #define MAX_VEL_MID 2.5
 #define MAX_VEL_SLOW 1.5
+=======
+#define MAX_VEL_NORMAL 3.0
+#define MAX_VEL_DETECT 1.5
+>>>>>>> 13edbfaa279e7f6dc42fb466fc7069ff781a3ed3
 
 
 typedef struct {
