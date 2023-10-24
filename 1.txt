@@ -1,4 +1,4 @@
-sudo docker run -it --net host  -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY=$DISPLAY --gpus all --name urobot-1023 --rm urobot-1023
-sudo docker build -t urobot-1023 .
-docker image save [镜像：TAG] > urobot-1023.tar
+sudo docker run -it --net host  -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY=$DISPLAY --gpus all --name urobot-1024 --rm urobot-1024
+sudo docker build -t urobot-1024 .
+docker image save [镜像：TAG] > urobot-1024.tar
 ffplay -autoexit filename.mp4

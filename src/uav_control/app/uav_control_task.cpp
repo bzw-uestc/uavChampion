@@ -22,24 +22,41 @@ void uavControl::uavControlTask(void) {
             //////////////////////////////先计算最大面积的检测框 判断是否靠近障碍圈////////////////////////////////////////////////
             int circleNum[2] = {0,0}, circleTag[2] = {0,0}; //检测圈的个数、最大面积对应的是第几个障碍圈
             double circleSquareMax[2] = {0,0}; //检测圈的最大面积
+            double circleWidthMax[2] = {0,0};
             for(int i=0; i < circle_detect_msg.size(); i++) { //遍历双目的检测信息 计算面积
                 circleNum[i] = circle_detect_msg[i].size() / 5; //检测结果存放的信息为：左上角x坐标、左上角y坐标、宽度、高度、类别名
                 for(int j=0; j<circleNum[i]; j++) {
                     double squareTemp = circle_detect_msg[i][j*5+2] * circle_detect_msg[i][j*5+3];
+                    double widthTemp = std::max(circle_detect_msg[i][j*5+2] , circle_detect_msg[i][j*5+3]);
+                    if(widthTemp > circleWidthMax[i]) {
+                        circleWidthMax[i] = widthTemp;
+                        circleTag[i] = j;  //标记第几个圈是最大面积圈
+                    }
                     if(squareTemp > circleSquareMax[i]) {
                         circleSquareMax[i] = squareTemp;
                         circleTag[i] = j;  //标记第几个圈是最大面积圈
                     }
                 }
             }
-            if(circleSquareMax[0] > 1000.0 && circleSquareMax[1] > 1000.0) {
-                drone_slowly_flag = true;
-                
+            if(circleSquareMax[0] > 3000.0 && circleSquareMax[1] > 3000.0 && uav_reached_location(ego_target_pose,visual_pose,8.0)) {
+                drone_slowly_flag = 2;
             }
-            
+            else if(circleSquareMax[0] > 1500.0 && circleSquareMax[1] > 1500.0 && drone_slowly_flag==0) {
+                drone_slowly_flag = 1;
+            }
+
+            // if(circleWidthMax[0] > 60.0 && circleWidthMax[1] > 60.0 && uav_reached_location(ego_target_pose,visual_pose,8.0)) {
+            //     drone_slowly_flag = 2;
+            // }
+            // else if(circleWidthMax[0] > 35.0 && circleWidthMax[1] > 35.0 && drone_slowly_flag==0) {
+            //     drone_slowly_flag = 1;
+            // }
+
             //////////////////////////////当检测面积足够大且无人机离参考位姿较近时才解算圈的世界坐标////////////////////////////////////
-            if (circleSquareMax[0] > 1000.0 && circleSquareMax[1] > 1000.0 && circleSquareMax[0] < 20000.0 && circleSquareMax[1] < 20000.0 
-            && uav_reached_location(ego_target_pose,visual_pose,10.0)){
+            if (circleSquareMax[0] > 1500.0 && circleSquareMax[1] > 1500.0 && circleSquareMax[0] < 20000.0 && circleSquareMax[1] < 20000.0 
+            && uav_reached_location(ego_target_pose,visual_pose,12.0)){
+            // if (circleWidthMax[0] > 32.0 && circleWidthMax[1] > 32.0 && circleWidthMax[0] < 200.0 && circleWidthMax[1] < 200.0 
+            // && uav_reached_location(ego_target_pose,visual_pose,8.0)){
                 std::vector<double> upm = detectCirclePosion(UpperMidpoint,circleTag);
                 std::vector<double> lom = detectCirclePosion(LowerMidpoint,circleTag);
                 std::vector<double> lem = detectCirclePosion(LeftMidpoint,circleTag);
@@ -52,37 +69,40 @@ void uavControl::uavControlTask(void) {
                     circlePositionCamera.y = (upm[3] + lom[3] + lem[3] + rim[3]) / 4;
                     circlePositionCamera.z = (upm[4] + lom[4] + lem[4] + rim[4]) / 4;
                     
-                    if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 7.0) circlePositionCamera.z -= 5.0;
-                    else if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 6.0) circlePositionCamera.z -= 4.0;
-                    else if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 5.0) circlePositionCamera.z -= 3.0;
+                    if(circlePositionCamera.z > 4.0) {
+                        if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 7.0) circlePositionCamera.z -= 5.0;
+                        else if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 6.0) circlePositionCamera.z -= 4.0;
+                        else if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 5.0) circlePositionCamera.z -= 3.0;
+                        
+                        if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 )) {
+                            aim_flag = 1;
+                        }
+                        else {
+                            aim_flag = 0;
+                        }
+                        #ifdef TRUE_POSE_DEBUGE
+                            Eigen::Quaterniond quaternion(drone_poses_true->pose.orientation.w, drone_poses_true->pose.orientation.x, drone_poses_true->pose.orientation.y, drone_poses_true->pose.orientation.z);
+                            Eigen::Vector3d translation(drone_poses_true->pose.position.x, drone_poses_true->pose.position.y, -drone_poses_true->pose.position.z);
+                        #else
+                        /*获取视觉里程计到世界坐标系的变换矩阵*/
+                            Eigen::Quaterniond quaternion(visual_pose.pose.pose.orientation.w, visual_pose.pose.pose.orientation.x, visual_pose.pose.pose.orientation.y, visual_pose.pose.pose.orientation.z);
+                            Eigen::Vector3d translation(visual_pose.pose.pose.position.x, visual_pose.pose.pose.position.y, -visual_pose.pose.pose.position.z);
+                        #endif
+                        Eigen::Matrix4d Twb = Eigen::Matrix4d::Identity(); //IMU坐标系到世界坐标系的变换 实际上就是视觉里程计
+                        Twb.block<3, 3>(0, 0) = quaternion.toRotationMatrix();
+                        Twb.block<3, 1>(0, 3) = translation;
+                        // 创建一个包含原始点坐标的齐次坐标向量
+                        Eigen::Vector4d Pc;
+                        Pc << circlePositionCamera.z, circlePositionCamera.x, -circlePositionCamera.y, 1.0;
+                        Eigen::Vector4d Pw = Twb * Pc;
+                        // 提取变换后的世界坐标系下的坐标
+                        circlePositionWorld.x = Pw(0);
+                        circlePositionWorld.y = Pw(1);
+                        circlePositionWorld.z = Pw(2);
+                        if(circlePositionWorld.z < 0.2) circlePositionWorld.z = 0.2;
+                        visual_detect_flag = 1;
+                    }
                     
-                    if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 )) {
-                        aim_flag = 1;
-                    }
-                    else {
-                        aim_flag = 0;
-                    }
-                    #ifdef TRUE_POSE_DEBUGE
-                        Eigen::Quaterniond quaternion(drone_poses_true->pose.orientation.w, drone_poses_true->pose.orientation.x, drone_poses_true->pose.orientation.y, drone_poses_true->pose.orientation.z);
-                        Eigen::Vector3d translation(drone_poses_true->pose.position.x, drone_poses_true->pose.position.y, -drone_poses_true->pose.position.z);
-                    #else
-                    /*获取视觉里程计到世界坐标系的变换矩阵*/
-                        Eigen::Quaterniond quaternion(visual_pose.pose.pose.orientation.w, visual_pose.pose.pose.orientation.x, visual_pose.pose.pose.orientation.y, visual_pose.pose.pose.orientation.z);
-                        Eigen::Vector3d translation(visual_pose.pose.pose.position.x, visual_pose.pose.pose.position.y, -visual_pose.pose.pose.position.z);
-                    #endif
-                    Eigen::Matrix4d Twb = Eigen::Matrix4d::Identity(); //IMU坐标系到世界坐标系的变换 实际上就是视觉里程计
-                    Twb.block<3, 3>(0, 0) = quaternion.toRotationMatrix();
-                    Twb.block<3, 1>(0, 3) = translation;
-                    // 创建一个包含原始点坐标的齐次坐标向量
-                    Eigen::Vector4d Pc;
-                    Pc << circlePositionCamera.z, circlePositionCamera.x, -circlePositionCamera.y, 1.0;
-                    Eigen::Vector4d Pw = Twb * Pc;
-                    // 提取变换后的世界坐标系下的坐标
-                    circlePositionWorld.x = Pw(0);
-                    circlePositionWorld.y = Pw(1);
-                    circlePositionWorld.z = Pw(2);
-                    if(circlePositionWorld.z < 0.2) circlePositionWorld.z = 0.2;
-                    visual_detect_flag = 1;
                     // ROS_ERROR("x:%f,y:%f,z:%f",circlePositionWorld.x,circlePositionWorld.y,circlePositionWorld.z);
                 }
             }
@@ -131,6 +151,21 @@ void uavControl::uavControlTask(void) {
                 ego_target_pose.pose.position.y = -(circle_poses_ref->poses.at(circle_num).position.y+10) ;
                 ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z) ;
             }
+            else if(circle_num == 13 && circle13_flag) {
+                ego_target_pose.pose.position.x = circle_poses_ref->poses.at(circle_num).position.x ;
+                ego_target_pose.pose.position.y = -circle_poses_ref->poses.at(circle_num).position.y ;
+                ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z) ;
+            }
+            else if(circle_num == 13 
+            && abs(visual_pose.pose.pose.position.y -(circle_poses_ref->poses.at(circle_num).position.y-10)) > 3) {
+                ego_target_pose.pose.position.x = circle_poses_ref->poses.at(circle_num).position.x ;
+                ego_target_pose.pose.position.y = -(circle_poses_ref->poses.at(circle_num).position.y-10);
+                ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z);
+            }
+            else if(circle_num == 13 
+            && abs(visual_pose.pose.pose.position.y -(circle_poses_ref->poses.at(circle_num).position.y-10)) < 3) {
+                circle13_flag = true;
+            }
             else {
                 ego_target_pose.pose.position.x = circle_poses_ref->poses.at(circle_num).position.x ;
                 ego_target_pose.pose.position.y = -circle_poses_ref->poses.at(circle_num).position.y ;
@@ -146,13 +181,19 @@ void uavControl::uavControlTask(void) {
             
         }
         
-        if(drone_slowly_flag) {
-            if(drone_max_vel > MAX_VEL_DETECT) drone_max_vel -= 0.1;
-            if(drone_max_vel < MAX_VEL_DETECT) drone_max_vel = MAX_VEL_DETECT;
+        if(drone_slowly_flag == 2) {
+            if(drone_max_vel > MAX_VEL_SLOW) drone_max_vel -= 0.1;
+            if(drone_max_vel < MAX_VEL_SLOW) drone_max_vel = MAX_VEL_SLOW;
+        }
+        else if(drone_slowly_flag == 1) {
+            if(drone_max_vel > MAX_VEL_MID) drone_max_vel -= 0.1;
+            else if(drone_max_vel < MAX_VEL_MID) drone_max_vel += 0.1;
+            if(drone_max_vel > MAX_VEL_MID) drone_max_vel = MAX_VEL_MID;
+            else if(drone_max_vel < MAX_VEL_MID) drone_max_vel = MAX_VEL_MID;
         }
         else {
-            if(drone_max_vel < MAX_VEL_NORMAL) drone_max_vel += 0.1;
-            if(drone_max_vel > MAX_VEL_NORMAL) drone_max_vel = MAX_VEL_NORMAL;
+            if(drone_max_vel < MAX_VEL_FAST) drone_max_vel += 0.1;
+            if(drone_max_vel > MAX_VEL_FAST) drone_max_vel = MAX_VEL_FAST;
         }
         if(abs(ego_target_pose.pose.position.x) < 200 && abs(ego_target_pose.pose.position.y) < 200 && abs(ego_target_pose.pose.position.z) < 45) {
             ego_target_pose.header.frame_id = "world";
@@ -160,7 +201,7 @@ void uavControl::uavControlTask(void) {
             std_msgs::Float64 drone_max_vel_msgs;
             drone_max_vel_msgs.data = drone_max_vel;
             drone_max_vel_pub.publish(drone_max_vel_msgs);
-            ROS_ERROR("max_vel%f",drone_max_vel);
+            // ROS_ERROR("max_vel%f",drone_max_vel);
             // ROS_ERROR("circle_num:%d,egox:%f,egoy:%f,egoz:%f",circle_num,ego_target_pose.pose.position.x,ego_target_pose.pose.position.y,ego_target_pose.pose.position.z);
         }
         
@@ -326,7 +367,7 @@ std::vector<double> uavControl::detectCirclePosion(SelectPoint p, int *circleTag
     circleDetectMsg.push_back(circlePostionCamera.y);
     circleDetectMsg.push_back(circlePostionCamera.z);
     
-    if(circlePostionCamera.x <10.0 && circlePostionCamera.y <10.0 && circlePostionCamera.z <10.0) {
+    if(circlePostionCamera.x <12.0 && circlePostionCamera.y <12.0 && circlePostionCamera.z <12.0) {
         // return worldPoint;
         return circleDetectMsg;
     }
