@@ -425,7 +425,7 @@ std::vector<std::vector<float>>  Yolo::detect(const cv::Mat *img) {
         objects_temp.push_back((float)Boxes[i][j * 4 + 1]);
         objects_temp.push_back((float)Boxes[i][j * 4 + 2]);
         objects_temp.push_back((float)Boxes[i][j * 4 + 3]);
-        objects_temp.push_back(ClassIndexs[i][j]);
+        objects_temp.push_back((float)ClassIndexs[i][j]);
       }
       objects.push_back(objects_temp);
     }

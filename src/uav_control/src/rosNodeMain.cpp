@@ -65,7 +65,7 @@ int main(int argc, char** argv)
   sub_right_image = nh.subscribe("/airsim_node/drone_1/front_right/Scene", 1, image1_callback);
 
   std::string package_path = ros::package::getPath("uav_control");
-  std::string model_path_str = package_path + "/detect_model/yolov5n_2.trt";
+  std::string model_path_str = package_path + "/detect_model/yolov5n4090_2.trt";
   char* model_path=const_cast<char*>(model_path_str.c_str());
   ROS_ERROR("model_path:%s", model_path);
   Yolo yolo_detect(model_path);
@@ -167,8 +167,11 @@ int main(int argc, char** argv)
           cv::Mat detect_img[2];
           detect_img[0] = ptr0->image.clone();
           detect_img[1] = ptr1->image.clone();
-          drone0.circle_detect_msg.clear();
-          drone0.circle_detect_msg = yolo_detect.detect(detect_img); //目标检测模块返回vector<float> 左上角x坐标、左上角y坐标、宽度、高度、类别名
+          // drone0.circle_detect_msg.clear();
+          // drone0.circle_detect_msg = yolo_detect.detect(detect_img); //目标检测模块返回vector<float> 左上角x坐标、左上角y坐标、宽度、高度、类别名
+          if(drone0.circle_msg_flag && drone0.takeoff_flag) {
+            drone0.circle_detect_msg_queue.emplace(yolo_detect.detect(detect_img));
+          }
           sensor_msgs::ImagePtr detect_image_left = cv_bridge::CvImage(color_msg0->header, "bgr8", detect_img[0]).toImageMsg();
           detect_left_pub.publish(detect_image_left);
 

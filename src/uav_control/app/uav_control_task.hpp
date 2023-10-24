@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 #include <queue>
 #include <vector>
+#include <unordered_map>
 #include <algorithm>
 #include <airsim_ros/VelCmd.h>
 #include <airsim_ros/SetLocalPosition.h>
@@ -37,14 +38,11 @@
 #define ObstacleCircleNum    17
 #define ODOM_INIT_TIME 3
 #define PD_DELAY_TIME  1
-<<<<<<< HEAD
+
 #define MAX_VEL_FAST 3.5
-#define MAX_VEL_MID 2.5
-#define MAX_VEL_SLOW 1.5
-=======
-#define MAX_VEL_NORMAL 3.0
-#define MAX_VEL_DETECT 1.5
->>>>>>> 13edbfaa279e7f6dc42fb466fc7069ff781a3ed3
+#define MAX_VEL_MID 2.7
+#define MAX_VEL_SLOW 1.7
+
 
 
 typedef struct {
@@ -69,25 +67,33 @@ private:
     ros::Subscriber drone_true_odom_sub,circle_poses_ref_sub,circle_poses_true_sub,tree_poses_true_sub, pd_vel_sub; //仿真器发送的话题
 
     airsim_ros::CirclePosesConstPtr circle_poses_ref;   //障碍圈位姿参考值
-    airsim_ros::CirclePosesConstPtr circle_poses_ref_z;   //障碍圈垂直方向跳跃点
     airsim_ros::CirclePosesConstPtr circle_poses_true;  //障碍圈位姿真值 只能debug用
     airsim_ros::TreePosesConstPtr tree_poses_true; //树的位置真值 只能debug用
     
     ros::Subscriber ego_pos_cmd_sub,ego_path_sub, visual_odom_sub;
     uavPosture posture_cmd;
+    
     int circle_num = 0;
-    bool circle_msg_flag = 0;
-    bool takeoff_flag = 0;
+    int circle_type = 1; //圈的种类 1为红圈 0为黄圈
+    
+    
     bool reset_flag = 0;
     bool odom_init_flag = 0;
     bool visual_detect_flag = 0;
     bool pd_delay_flag = 0;
     bool aim_flag = 0;
+    bool circle4_flag = false;
+    bool circle12_flag = false;
     bool circle13_flag = false;
+    bool circle15_flag = false;
+    // std::unordered_map<int,geometry_msgs::PoseStamped> mid_point_map;
+    // std::unordered_map<int,int> mid_point_map;
+    bool mid_point_flag = false;
     int drone_slowly_flag = 0;
     double pd_delay_start_time = 0;
     double odom_init_start_time = 0; //仿真器复位后的时间，里程计开始初始化的时间
     float drone_max_vel = MAX_VEL_FAST;
+    std::vector<std::vector<float>> circle_detect_msg;  //外部vector 0存放左目结果 1存放右目结果
     void uavSetGoalPostion(void);
     void circlePosesRef_callBack(const airsim_ros::CirclePosesConstPtr& circle);
     void circlePosesTrue_callBack(const airsim_ros::CirclePosesConstPtr& circle);
@@ -99,11 +105,14 @@ private:
     void droneVisualPose_callBack(const nav_msgs::Odometry& drone_vins_poses);
     std::vector<double> detectCirclePosion(SelectPoint p, int *circleTag);
     bool uav_reached_location(geometry_msgs::PoseStamped ref,nav_msgs::Odometry fdb,double distance_dxyz);
+
 public:
     uavControl(ros::NodeHandle& nh);
     ~uavControl(){}
     int drone_pose_true_flag = 0;
-    std::vector<std::vector<float>> circle_detect_msg;  //外部vector 0存放左目结果 1存放右目结果
+    bool circle_msg_flag = false;
+    bool takeoff_flag = false;
+    std::queue<std::vector<std::vector<float>>> circle_detect_msg_queue;
     geometry_msgs::PoseStampedConstPtr drone_poses_true; //仿真器无人机真实位姿
     cv::Mat image_left,image_right,image_depth,heat_map; //无人机搭载的双目图像 外部传进来
     float *pointcloud;

@@ -304,7 +304,7 @@ namespace ego_planner
       bool flag_step_2_success = true;
       if (!pos.checkFeasibility(ratio, false))
       {
-        cout << "Need to reallocate time." << endl;
+        // cout << "Need to reallocate time." << endl;
 
         Eigen::MatrixXd optimal_control_points;
         flag_step_2_success = refineTrajAlgo(pos, start_end_derivatives, ratio, ts, optimal_control_points);
