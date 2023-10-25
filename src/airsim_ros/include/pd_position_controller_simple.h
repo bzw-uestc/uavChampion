@@ -36,7 +36,7 @@ public:
     double reached_yaw_degrees;
 
     PIDParams()
-        : kp_x(0.8), kp_y(0.8), kp_z(0.8), kp_yaw(0.5), kd_x(0.5), kd_y(0.5), kd_z(0.5), kd_yaw(0.2), reached_thresh_xyz(0.5), reached_yaw_degrees(0.5)
+        : kp_x(0.6), kp_y(0.6), kp_z(0.6), kp_yaw(0.5), kd_x(0.5), kd_y(0.5), kd_z(0.5), kd_yaw(0.2), reached_thresh_xyz(0.5), reached_yaw_degrees(0.5)
     {
     }
 
@@ -60,7 +60,7 @@ public:
     double max_yaw_rate_degree;
 
     DynamicConstraints()
-        : max_vel_horz_abs(3.0), max_vel_vert_abs(3.0), max_yaw_rate_degree(1)
+        : max_vel_horz_abs(5.0), max_vel_vert_abs(5.0), max_yaw_rate_degree(1)
     {
     }
 

@@ -46,7 +46,7 @@ namespace ego_planner
   void EGOPlannerManager::setMaxVel(const float max_vel) {
     // bspline_optimizer_->setMaxVel(max_vel);
     pp_.max_vel_ = max_vel - 0.5;
-    // ROS_ERROR("max%f",pp_.max_vel_);
+    ROS_ERROR("ego_max%f",pp_.max_vel_);
   }
   // !SECTION
 
