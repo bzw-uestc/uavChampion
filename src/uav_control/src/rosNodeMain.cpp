@@ -92,8 +92,9 @@ int main(int argc, char** argv)
     }
   });
 
+  ros::Rate msgProcess_rate(50);
   std::thread msgProcess_thread([&]() {
-    while(1) {
+    while(ros::ok()) {
       if(!img_buf0.empty() && !img_buf1.empty()) { //!img_buf0.empty() && !img_buf1.empty()   color_msg_left != nullptr && color_msg_right != nullptr
         auto start = std::chrono::system_clock::now();
         sensor_msgs::ImageConstPtr color_msg0 = nullptr;
@@ -198,6 +199,7 @@ int main(int argc, char** argv)
           // ROS_ERROR("task1:%dms",time);
         }
       }
+      msgProcess_rate.sleep();
     }
   });
 

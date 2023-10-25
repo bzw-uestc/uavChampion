@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(uav_control)
-
+set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 set(OpenCV_DIR /usr/local)

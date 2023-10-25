@@ -39,11 +39,13 @@
 #define ODOM_INIT_TIME 3
 #define PD_DELAY_TIME  0
 
-#define MAX_VEL_FAST 7.5
-#define MAX_VEL_MID 3.5
-#define MAX_VEL_SLOW 2.3
-#define MAX_VEL_SLOW_SLOW 1.6
-
+#define MAX_VEL_FAST 7.0
+#define MAX_VEL_MID 3.0
+#define MAX_VEL_SLOW 2.0
+#define MAX_VEL_SLOW_SLOW 1.8
+        
+#define MAX_ACC_FAST 10
+#define MAX_ACC_NORMAL 10
 
 typedef struct {
     double x,y,z,yaw;
@@ -63,7 +65,7 @@ private:
     geometry_msgs::PoseStamped ego_target_pose;
     tf::TransformListener listener;
     ros::ServiceClient setGoalPosition_client,sim_takeoff_client,sim_reset_client;
-    ros::Publisher drone_vel_pub,drone_pose_pub,drone_true_odom_pub,ego_goal_point_pub,drone_max_vel_pub;
+    ros::Publisher drone_vel_pub,drone_pose_pub,drone_true_odom_pub,ego_goal_point_pub,drone_max_vel_pub,drone_max_acc_pub;
     ros::Subscriber drone_true_odom_sub,circle_poses_ref_sub,circle_poses_true_sub,tree_poses_true_sub, pd_vel_sub; //仿真器发送的话题
 
     airsim_ros::CirclePosesConstPtr circle_poses_ref;   //障碍圈位姿参考值
@@ -93,6 +95,7 @@ private:
     double pd_delay_start_time = 0;
     double odom_init_start_time = 0; //仿真器复位后的时间，里程计开始初始化的时间
     float drone_max_vel = MAX_VEL_FAST;
+    float drone_max_acc = MAX_ACC_FAST;
     std::vector<std::vector<float>> circle_detect_msg;  //外部vector 0存放左目结果 1存放右目结果
     void uavSetGoalPostion(void);
     void circlePosesRef_callBack(const airsim_ros::CirclePosesConstPtr& circle);
@@ -105,7 +108,7 @@ private:
     void droneVisualPose_callBack(const nav_msgs::Odometry& drone_vins_poses);
     std::vector<double> detectCirclePosion(SelectPoint p, int *circleTag);
     bool uav_reached_location(geometry_msgs::PoseStamped ref,nav_msgs::Odometry fdb,double distance_dxyz);
-
+    bool uav_reached_location(double target_x,double target_y,double target_z,nav_msgs::Odometry fdb,double distance_dxyz);
 public:
     uavControl(ros::NodeHandle& nh);
     ~uavControl(){}

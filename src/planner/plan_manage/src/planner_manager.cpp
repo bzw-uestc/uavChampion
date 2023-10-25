@@ -46,9 +46,13 @@ namespace ego_planner
   void EGOPlannerManager::setMaxVel(const float max_vel) {
     // bspline_optimizer_->setMaxVel(max_vel);
     pp_.max_vel_ = max_vel - 0.5;
-    ROS_ERROR("ego_max%f",pp_.max_vel_);
+    // ROS_ERROR("ego_max%f",pp_.max_vel_);
   }
-  // !SECTION
+  void EGOPlannerManager::setMaxAcc(const float max_acc) {
+    // bspline_optimizer_->setMaxVel(max_vel);
+    pp_.max_acc_ = max_acc; 
+    ROS_ERROR("ego_max_vel%f,ego_max_acc:%f",pp_.max_vel_,pp_.max_acc_);
+  }
 
   // SECTION rebond replanning
 

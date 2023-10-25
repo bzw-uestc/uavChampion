@@ -55,10 +55,10 @@ void uavControl::uavControlTask(void) {
             if(!uav_reached_location(ego_target_pose,visual_pose,15.0) ) {
                 drone_slowly_flag = 0;
             }
-            else if(circleSquareMax[0] > 3000.0 && circleSquareMax[1] > 3000.0 && uav_reached_location(ego_target_pose,visual_pose,12.0) && drone_slowly_flag <=2) {
+            else if(circleSquareMax[0] > 2000.0 && circleSquareMax[1] > 2000.0 && uav_reached_location(ego_target_pose,visual_pose,12.0) && drone_slowly_flag <=2) {
                 drone_slowly_flag = 2;
             }
-            else if(circleSquareMax[0] > 2000.0 && circleSquareMax[1] > 2000.0 && uav_reached_location(ego_target_pose,visual_pose,12.0) && drone_slowly_flag <= 1 ) { //&& circleTypeDetect[0] == circle_type && circleTypeDetect[1] == circle_type
+            else if(circleSquareMax[0] > 1200.0 && circleSquareMax[1] > 1200.0 && uav_reached_location(ego_target_pose,visual_pose,12.0) && drone_slowly_flag <= 1 ) { //&& circleTypeDetect[0] == circle_type && circleTypeDetect[1] == circle_type
                 drone_slowly_flag = 1;
             }
             else if(uav_reached_location(ego_target_pose,visual_pose,8.0) && drone_slowly_flag<=1) {
@@ -73,7 +73,7 @@ void uavControl::uavControlTask(void) {
             // ROS_ERROR("ego: x:%f,y:%f,z:%f",ego_target_pose.pose.position.x,ego_target_pose.pose.position.y,ego_target_pose.pose.position.z);
             // ROS_ERROR("visual: x:%f,y:%f,z:%f",visual_pose.pose.pose.position.x,visual_pose.pose.pose.position.y,visual_pose.pose.pose.position.z);
             //////////////////////////////当检测面积足够大且无人机离参考位姿较近时才解算圈的世界坐标////////////////////////////////////
-            if (circleSquareMax[0] > 1300.0 && circleSquareMax[1] > 1300.0 && circleSquareMax[0] < 15000.0 && circleSquareMax[1] < 15000.0 
+            if (circleSquareMax[0] > 1500.0 && circleSquareMax[1] > 1500.0 && circleSquareMax[0] < 20000.0 && circleSquareMax[1] < 20000.0 
             && uav_reached_location(ego_target_pose,visual_pose,12.0) && circleTypeDetect[0] == circle_type && circleTypeDetect[1] == circle_type){
             // if (circleWidthMax[0] > 32.0 && circleWidthMax[1] > 32.0 && circleWidthMax[0] < 200.0 && circleWidthMax[1] < 200.0 
             // && uav_reached_location(ego_target_pose,visual_pose,8.0)){
@@ -104,9 +104,9 @@ void uavControl::uavControlTask(void) {
                         // if((abs(circlePositionCamera.x) < 0.5 || abs(circlePositionCamera.y) < 0.5 )) {
                         //     drone_slowly_flag = 2;
                         // }
-                        if(!uav_reached_location(ego_target_pose,visual_pose,8.0)) {
-                            drone_slowly_flag = 2;
-                        }
+                        // if(!uav_reached_location(ego_target_pose,visual_pose,8.0)) {
+                        //     drone_slowly_flag = 2;
+                        // }
                         #ifdef TRUE_POSE_DEBUGE
                             Eigen::Quaterniond quaternion(drone_poses_true->pose.orientation.w, drone_poses_true->pose.orientation.x, drone_poses_true->pose.orientation.y, drone_poses_true->pose.orientation.z);
                             Eigen::Vector3d translation(drone_poses_true->pose.position.x, drone_poses_true->pose.position.y, -drone_poses_true->pose.position.z);
@@ -150,9 +150,17 @@ void uavControl::uavControlTask(void) {
                 pd_delay_start_time = ros::Time::now().toSec();
             }
             if(circle_num <= 15) {
-                circle_num+=1;
+                circle_num += 1;
+                ROS_ERROR("circle_num:%d",circle_num);
+                ROS_ERROR("visual:x:%f,y:%f,z:%f",visual_pose.pose.pose.position.x,visual_pose.pose.pose.position.y,visual_pose.pose.pose.position.z);
+                ROS_ERROR("circle:x:%f,y:%f,z:%f",circle_poses_ref->poses.at(circle_num).position.x,circle_poses_ref->poses.at(circle_num).position.y,circle_poses_ref->poses.at(circle_num).position.z);
+                if(uav_reached_location(circle_poses_ref->poses.at(circle_num).position.x,circle_poses_ref->poses.at(circle_num).position.y,
+                circle_poses_ref->poses.at(circle_num).position.z,visual_pose,8.0)) {
+                    circle_num += 1;
+                    ROS_ERROR("jump to circle:%d",circle_num);
+                }
             }
-            
+            // if(uav_reached_location(circle_poses_ref->poses.at(circle_num).position.x,))
             if(circle_num == 8) { //跳过剩下的黄圈
                 circle_num = 12;
             }
@@ -168,7 +176,7 @@ void uavControl::uavControlTask(void) {
                 ego_target_pose.pose.position.z = 3 ;
             }
             else if(circle_num == 13) {
-                ego_target_pose.pose.position.x =  circle_poses_ref->poses.at(circle_num).position.x -8;
+                ego_target_pose.pose.position.x =  circle_poses_ref->poses.at(circle_num).position.x -3;
                 ego_target_pose.pose.position.y = -(circle_poses_ref->poses.at(circle_num).position.y- 15);
                 ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z);
             }
@@ -181,7 +189,7 @@ void uavControl::uavControlTask(void) {
             if(circle_num >= 12) circle_type = 1; //只识别红圈
             else if(circle_num >= 5) circle_type = 0;  //只识别黄圈
             else circle_type = 1;
-            ROS_ERROR("circle_num:%d",circle_num);
+           
             visual_detect_flag = false;  
             drone_slowly_flag = 0;
             mid_point_flag = false;    //重置状态机
@@ -192,6 +200,8 @@ void uavControl::uavControlTask(void) {
                 ego_target_pose.pose.position.x = circlePositionWorld.x;
                 ego_target_pose.pose.position.y = -circlePositionWorld.y;
                 ego_target_pose.pose.position.z = circlePositionWorld.z;
+                Eigen::Quaterniond quaternion(visual_pose.pose.pose.orientation.w, visual_pose.pose.pose.orientation.x, visual_pose.pose.pose.orientation.y, visual_pose.pose.pose.orientation.z);
+                // quaternion.to
                 tf::Quaternion q1; 
                 tf::quaternionMsgToTF(visual_pose.pose.pose.orientation, q1);
                 double roll,pitch,yaw;
@@ -226,7 +236,7 @@ void uavControl::uavControlTask(void) {
                 ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z) ;
             }
             else if(circle_num == 13 && !circle13_flag && !uav_reached_location(ego_target_pose,visual_pose,5)) { //发布中间点 
-                ego_target_pose.pose.position.x =  circle_poses_ref->poses.at(circle_num).position.x -8;
+                ego_target_pose.pose.position.x =  circle_poses_ref->poses.at(circle_num).position.x -3;
                 ego_target_pose.pose.position.y = -(circle_poses_ref->poses.at(circle_num).position.y-15);
                 ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z);
             }
@@ -279,15 +289,22 @@ void uavControl::uavControlTask(void) {
             
         }
         
-        if(drone_slowly_flag == 3) drone_max_vel = MAX_VEL_SLOW_SLOW;
+        if(drone_slowly_flag == 3) {
+            drone_max_vel = MAX_VEL_SLOW_SLOW;
+            drone_max_acc = MAX_ACC_NORMAL;
+        }
+        
         else if(drone_slowly_flag == 2) {
             drone_max_vel = MAX_VEL_SLOW;
+            drone_max_acc = MAX_ACC_NORMAL;
         }
         else if(drone_slowly_flag == 1) {
             drone_max_vel = MAX_VEL_MID;
+            drone_max_acc = MAX_ACC_FAST;
         }
         else {
             drone_max_vel = MAX_VEL_FAST;
+            drone_max_acc = MAX_ACC_FAST;
         }
 
         if(abs(ego_target_pose.pose.position.x) < 200 && abs(ego_target_pose.pose.position.y) < 200 && abs(ego_target_pose.pose.position.z) < 45) {
@@ -296,6 +313,9 @@ void uavControl::uavControlTask(void) {
             std_msgs::Float64 drone_max_vel_msgs;
             drone_max_vel_msgs.data = drone_max_vel;
             drone_max_vel_pub.publish(drone_max_vel_msgs);
+            std_msgs::Float64 drone_max_acc_msgs;
+            drone_max_acc_msgs.data = drone_max_acc;
+            drone_max_acc_pub.publish(drone_max_acc_msgs);
             // ROS_ERROR("max_vel%f",drone_max_vel);
             // ROS_ERROR("circle_num:%d,egox:%f,egoy:%f,egoz:%f",circle_num,ego_target_pose.pose.position.x,ego_target_pose.pose.position.y,ego_target_pose.pose.position.z);
         }
@@ -340,6 +360,8 @@ uavControl::uavControl(ros::NodeHandle &nh) {
     drone_vel_pub = nh.advertise<airsim_ros::VelCmd>("/airsim_node/drone_1/vel_cmd_body_frame", 10);  //pd-vel-controler
     drone_pose_pub = nh.advertise<airsim_ros::PoseCmd>("/airsim_node/drone_1/pose_cmd_body_frame", 10); //pd-location-controler
     drone_max_vel_pub = nh.advertise<std_msgs::Float64>("/drone_1/max_vel",10); //max vel to pd and ego
+    drone_max_acc_pub = nh.advertise<std_msgs::Float64>("/drone_1/max_acc",10); //max vel to pd and ego
+
     ego_goal_point_pub = nh.advertise<geometry_msgs::PoseStamped>("/ego_planner/goal_point", 1); 
 
     setGoalPosition_client = nh.serviceClient<airsim_ros::SetLocalPosition>("/airsim_node/local_position_goal/override");
@@ -617,6 +639,17 @@ bool uavControl::uav_reached_location(geometry_msgs::PoseStamped ref,nav_msgs::O
     dx = abs(ref.pose.position.x - fdb.pose.pose.position.x );
     dy = abs(-ref.pose.position.y - fdb.pose.pose.position.y );
     dz = abs(-ref.pose.position.z - fdb.pose.pose.position.z );
+    if(dx < distance_dxyz && dy < distance_dxyz && dz < distance_dxyz) {
+        return true;
+    }
+    return false;
+}
+
+bool uavControl::uav_reached_location(double target_x,double target_y,double target_z,nav_msgs::Odometry fdb,double distance_dxyz) {
+    double dx,dy,dz;
+    dx = abs(target_x - fdb.pose.pose.position.x );
+    dy = abs(target_y - fdb.pose.pose.position.y );
+    dz = abs(target_z - fdb.pose.pose.position.z );
     if(dx < distance_dxyz && dy < distance_dxyz && dz < distance_dxyz) {
         return true;
     }
