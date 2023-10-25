@@ -200,18 +200,45 @@ void uavControl::uavControlTask(void) {
                 ego_target_pose.pose.position.x = circlePositionWorld.x;
                 ego_target_pose.pose.position.y = -circlePositionWorld.y;
                 ego_target_pose.pose.position.z = circlePositionWorld.z;
-                Eigen::Quaterniond quaternion(visual_pose.pose.pose.orientation.w, visual_pose.pose.pose.orientation.x, visual_pose.pose.pose.orientation.y, visual_pose.pose.pose.orientation.z);
-                // quaternion.to
-                tf::Quaternion q1; 
-                tf::quaternionMsgToTF(visual_pose.pose.pose.orientation, q1);
-                double roll,pitch,yaw;
-                tf::Matrix3x3(q1).getRPY(roll, pitch, yaw); // rpy得是double
-                yaw = -yaw;
-                tf::Quaternion q2 = tf::createQuaternionFromRPY(roll, pitch, yaw);
-                ego_target_pose.pose.orientation.w = q2.getW();
-                ego_target_pose.pose.orientation.x = q2.getX();
-                ego_target_pose.pose.orientation.y = q2.getY();
-                ego_target_pose.pose.orientation.z = q2.getZ();
+                nav_msgs::Odometry visual_pose_temp;
+                visual_pose_temp = visual_pose;
+
+                
+
+                // Eigen::Quaterniond q1(visual_pose_temp.pose.pose.orientation.w, visual_pose_temp.pose.pose.orientation.x, 
+                // visual_pose_temp.pose.pose.orientation.y, visual_pose_temp.pose.pose.orientation.z);
+                // Eigen::Vector3d eulerAngle=q1.matrix().eulerAngles(2,1,0);
+                // double yaw,pitch,roll;
+                // roll = eulerAngle(0);
+                // pitch = eulerAngle(1);
+                // yaw = eulerAngle(2);
+                // yaw = -yaw;
+                // ROS_ERROR("yaw:%f",yaw);
+                // Eigen::Vector3d eulerAngle2(yaw,pitch,roll);
+                // Eigen::AngleAxisd rollAngle(Eigen::AngleAxisd(eulerAngle2(2),Eigen::Vector3d::UnitX()));
+                // Eigen::AngleAxisd pitchAngle(Eigen::AngleAxisd(eulerAngle2(1),Eigen::Vector3d::UnitY()));
+                // Eigen::AngleAxisd yawAngle(Eigen::AngleAxisd(eulerAngle2(0),Eigen::Vector3d::UnitZ())); 
+                // Eigen::Quaterniond q2 = yawAngle*pitchAngle*rollAngle;
+
+                // ego_target_pose.pose.orientation.w = q2.w();
+                // ego_target_pose.pose.orientation.x = q2.x();
+                // ego_target_pose.pose.orientation.y = q2.y();
+                // ego_target_pose.pose.orientation.z = q2.z();
+
+                Eigen::Quaterniond q1(visual_pose_temp.pose.pose.orientation.w, visual_pose_temp.pose.pose.orientation.x, 
+                visual_pose_temp.pose.pose.orientation.y, visual_pose_temp.pose.pose.orientation.z);
+                Eigen::Matrix3d rotationMatrix = q1.toRotationMatrix();
+                Eigen::Vector3d euler_angles = rotationMatrix.eulerAngles(0, 1, 2);
+                euler_angles[2] = -euler_angles[2];
+                Eigen::Matrix3d modifiedRotationMatrix;
+                modifiedRotationMatrix = Eigen::AngleAxisd(euler_angles[0], Eigen::Vector3d::UnitX())
+                           * Eigen::AngleAxisd(euler_angles[1], Eigen::Vector3d::UnitY())
+                           * Eigen::AngleAxisd(euler_angles[2], Eigen::Vector3d::UnitZ());
+                Eigen::Quaterniond q2(modifiedRotationMatrix);
+                ego_target_pose.pose.orientation.w = q2.w();
+                ego_target_pose.pose.orientation.x = q2.x();
+                ego_target_pose.pose.orientation.y = q2.y();
+                ego_target_pose.pose.orientation.z = q2.z();            
             }
         }
         else {
@@ -280,13 +307,17 @@ void uavControl::uavControlTask(void) {
                 ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z) ;
             }
             double circle_roll = 0, circle_pitch = 0, circle_yaw = circle_poses_ref->poses.at(circle_num).yaw;
-            tf::Quaternion circle_q = tf::createQuaternionFromRPY(circle_roll, circle_pitch, circle_yaw);
-            ego_target_pose.pose.orientation.w = circle_q.getW();
-            ego_target_pose.pose.orientation.x = circle_q.getX();
-            ego_target_pose.pose.orientation.y = circle_q.getY();
-            ego_target_pose.pose.orientation.z = circle_q.getZ();
+
+            Eigen::Matrix3d rotationMatrix;
+            rotationMatrix = Eigen::AngleAxisd(circle_roll, Eigen::Vector3d::UnitX())
+                   * Eigen::AngleAxisd(circle_pitch, Eigen::Vector3d::UnitY())
+                   * Eigen::AngleAxisd(circle_yaw, Eigen::Vector3d::UnitZ());
+            Eigen::Quaterniond circle_q(rotationMatrix);
             
-            
+            ego_target_pose.pose.orientation.w = circle_q.w();
+            ego_target_pose.pose.orientation.x = circle_q.x();
+            ego_target_pose.pose.orientation.y = circle_q.y();
+            ego_target_pose.pose.orientation.z = circle_q.z();
         }
         
         if(drone_slowly_flag == 3) {

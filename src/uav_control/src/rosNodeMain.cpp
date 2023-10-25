@@ -58,7 +58,6 @@ int main(int argc, char** argv)
   ros::Publisher drone_true_odom_pub = nh.advertise<nav_msgs::Odometry>("/drone_true_odom", 1);  //发布出仿真器的真实位姿
   // ros::Publisher odom_pub = nh.advertise<nav_msgs::Odometry>("/gps/odom", 10);
   
-  tf2_ros::TransformBroadcaster* tf_broadcaster;
   ros::Subscriber sub_left_image,sub_right_image,sub_gps_msg;
 
   sub_left_image = nh.subscribe("/airsim_node/drone_1/front_left/Scene", 1, image0_callback);
@@ -135,12 +134,6 @@ int main(int argc, char** argv)
             drone_odom.pose.pose.orientation.x = drone0.drone_poses_true->pose.orientation.x;
             drone_odom.pose.pose.orientation.y = -drone0.drone_poses_true->pose.orientation.y;
             drone_odom.pose.pose.orientation.z = -drone0.drone_poses_true->pose.orientation.z;
-
-          // tf::Quaternion quat;
-          // tf::quaternionMsgToTF(drone0.drone_poses_true->pose.orientation, quat);
-          // double roll, pitch, yaw;//定义存储r\p\y的容器
-          // tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);//进行转换
-          // ROS_ERROR("TRUEO:%f,%f,%f", roll,pitch,yaw);   //DEBUG用
           
             drone_true_odom_pub.publish(drone_odom);
           }
