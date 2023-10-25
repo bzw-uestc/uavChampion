@@ -115,7 +115,6 @@ public:
     std::queue<std::vector<std::vector<float>>> circle_detect_msg_queue;
     geometry_msgs::PoseStampedConstPtr drone_poses_true; //仿真器无人机真实位姿
     cv::Mat image_left,image_right,image_depth,heat_map; //无人机搭载的双目图像 外部传进来
-    float *pointcloud;
     void uavControlTask(void);
 };
 
