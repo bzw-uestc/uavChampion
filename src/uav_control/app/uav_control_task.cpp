@@ -168,8 +168,8 @@ void uavControl::uavControlTask(void) {
                 ego_target_pose.pose.position.z = 3 ;
             }
             else if(circle_num == 13) {
-                ego_target_pose.pose.position.x =  circle_poses_ref->poses.at(circle_num).position.x ;
-                ego_target_pose.pose.position.y = -(circle_poses_ref->poses.at(circle_num).position.y- 20);
+                ego_target_pose.pose.position.x =  circle_poses_ref->poses.at(circle_num).position.x -8;
+                ego_target_pose.pose.position.y = -(circle_poses_ref->poses.at(circle_num).position.y- 15);
                 ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z);
             }
             else if(circle_num == 15) {
@@ -226,8 +226,8 @@ void uavControl::uavControlTask(void) {
                 ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z) ;
             }
             else if(circle_num == 13 && !circle13_flag && !uav_reached_location(ego_target_pose,visual_pose,5)) { //发布中间点 
-                ego_target_pose.pose.position.x =  circle_poses_ref->poses.at(circle_num).position.x ;
-                ego_target_pose.pose.position.y = -(circle_poses_ref->poses.at(circle_num).position.y-20);
+                ego_target_pose.pose.position.x =  circle_poses_ref->poses.at(circle_num).position.x -8;
+                ego_target_pose.pose.position.y = -(circle_poses_ref->poses.at(circle_num).position.y-15);
                 ego_target_pose.pose.position.z = abs(circle_poses_ref->poses.at(circle_num).position.z);
             }
             else if(circle_num == 13 && !circle13_flag && uav_reached_location(ego_target_pose,visual_pose,5)) { //已到达中间点

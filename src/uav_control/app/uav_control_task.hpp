@@ -73,7 +73,7 @@ private:
     ros::Subscriber ego_pos_cmd_sub,ego_path_sub, visual_odom_sub;
     uavPosture posture_cmd;
     
-    int circle_num = 0;
+    int circle_num = 12;
     int circle_type = 1; //圈的种类 1为红圈 0为黄圈
     
     
