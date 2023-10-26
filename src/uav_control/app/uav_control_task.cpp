@@ -189,6 +189,7 @@ void uavControl::uavControlTask(void) {
                         ROS_ERROR("circle16_clash_rotation:%d,circle_rotation_true:%d",circle16_clash_rotation,circle16_rotation_flag);
                         if(circle16_dt > 12 && circle16_ref_cruuent.z - circle16_min_z < 0.4 && circle16_rotation_flag == circle16_clash_rotation) {  //
                             circle16_clash_flag = true;
+                            circle16_point = 1;
                             // if(circle16_clash_rotation == 1) { //冲右上点
                             //     circle16_clash_point.y -= 1;
                             // }
@@ -250,7 +251,6 @@ void uavControl::uavControlTask(void) {
                     }
                 }
                 else if(circleSquareMax[0] > 3100.0 && circleSquareMax[1] > 3100.0 && !circle16_obs_flag) {
-                    // circle16_point = 0;
                     circle16_obs_flag = true;
                     nav_msgs::Odometry visual_pose_temp;
                     visual_pose_temp = visual_pose;
@@ -379,6 +379,45 @@ void uavControl::uavControlTask(void) {
             drone_slowly_flag = 0;
             mid_point_flag = false;    //重置状态机
         }
+
+
+        // tf::Quaternion visulQuatcirclePoint0;
+        // tf::quaternionMsgToTF(visual_pose.pose.pose.orientation, visulQuatcirclePoint0);
+        // double visulQuatcirclePoint0roll, visulQuatcirclePoint0pitch, visulQuatcirclePoint0yaw;//定义存储r\p\y的容器
+        // tf::Matrix3x3(visulQuatcirclePoint0).getRPY(visulQuatcirclePoint0roll, visulQuatcirclePoint0pitch, visulQuatcirclePoint0yaw);//进行转换
+        // ROS_ERROR("circle16_yaw:%f;visulQuatcirclePoint0yaw:%f",circle16_yaw,visulQuatcirclePoint0yaw);
+
+        ROS_ERROR("visual_pose:%f,%f,%f",visual_pose.pose.pose.position.x,visual_pose.pose.pose.position.y,visual_pose.pose.pose.position.z);
+        ROS_ERROR("circle16_aim_point:%f,%f,%f",circle16_aim_point.x,circle16_aim_point.y,circle16_aim_point.z);
+        ROS_ERROR("circle16_clash_point:%f,%f,%f",circle16_clash_point.x,circle16_clash_point.y,circle16_aim_point.z);
+  
+        if(abs(visual_pose.pose.pose.position.x - circle16_aim_point.x) < 0.4 && abs(visual_pose.pose.pose.position.y - circle16_aim_point.y) < 0.4 
+               && abs((-1) * visual_pose.pose.pose.position.z - circle16_aim_point.z) < 0.4 && circle_num==16 && circle16_point == 0 && circle16_clash_flag)  
+        {
+            circle16_point = 1;
+            ROS_ERROR("TESTcircle16_point = 1;");
+        }
+        else{
+            if(!circle16_loop_flag)
+            {
+                if(abs(visual_pose.pose.pose.position.x - circle16_clash_point.x) < 0.4 && abs(visual_pose.pose.pose.position.y - circle16_clash_point.y) < 0.4 
+                  && abs((-1) * visual_pose.pose.pose.position.z - circle16_aim_point.z) < 0.4 && circle_num==16 && circle16_point == 1 && circle16_clash_flag)
+                {
+                    circle16_loop_flag = true;
+                    circle16_point = 0;
+                    ROS_ERROR("TESTcircle16_point = 0;");
+                }
+            }
+            else if(abs(visual_pose.pose.pose.position.x - (circle16_clash_point.x - 10)) < 0.4 && abs(visual_pose.pose.pose.position.y - circle16_clash_point.y) < 0.4 
+               && abs((-1) * visual_pose.pose.pose.position.z - circle16_aim_point.z) < 0.4 && circle_num==16 && circle16_point == 1 && circle16_clash_flag)
+            {
+                circle16_loop_flag = true;
+                circle16_point = 0;
+                ROS_ERROR("TESTcircle16_point = 0;");
+            }
+        }
+        ROS_ERROR("circle16_point:%d",circle16_point);
+        ROS_ERROR("circle16_loop_flag:%d",circle16_loop_flag);
         ////////////////////////////按策略重新规划下一帧的目标点////////////////////////////////////////////////
         if(circle_num == 16 && circle16_arrive_flag) {
             if(circlePositionWorld.x!=0 && circlePositionWorld.y!=0 && circlePositionWorld.z!=0) {
@@ -401,7 +440,8 @@ void uavControl::uavControlTask(void) {
                 ego_target_pose.pose.orientation.w = q2.w();
                 ego_target_pose.pose.orientation.x = q2.x();
                 ego_target_pose.pose.orientation.y = q2.y();
-                ego_target_pose.pose.orientation.z = q2.z();            
+                ego_target_pose.pose.orientation.z = q2.z();
+                            
             }
         }
         else if(visual_detect_flag) { //进入视觉模式 && (circle_num != 13 || (circle_num == 13 && circle13_flag)）
@@ -429,7 +469,7 @@ void uavControl::uavControlTask(void) {
                 ego_target_pose.pose.orientation.z = q2.z();            
             }
         }
-        else {
+        else if (!circle16_loop_flag){
             if(circle_num == 15 && circle15_flag) {  //发布正常点
                 ego_target_pose.pose.position.x = circle_poses_ref->poses.at(circle_num).position.x ;
                 ego_target_pose.pose.position.y = -circle_poses_ref->poses.at(circle_num).position.y ;
@@ -551,30 +591,30 @@ void uavControl::uavControlTask(void) {
                 pd_delay_flag = false;
             }
         }
-        else if(circle_num == 16 && circle16_clash_flag) {
+        else if(circle_num == 16 && circle16_clash_flag && !circle16_loop_flag) {
             posCmd.request.x = circle16_clash_point.x;
             posCmd.request.y = circle16_clash_point.y;
             posCmd.request.z = -circle16_aim_point.z;
             setGoalPosition_client.call(posCmd);
         }
-        else if(circle_num == 16 && circle16_aim_flag) {
+        else if(circle_num == 16 && circle16_aim_flag && !circle16_loop_flag) {
             posCmd.request.x = circle16_aim_point.x;
             posCmd.request.y = circle16_aim_point.y;
             posCmd.request.z = -circle16_aim_point.z;
             setGoalPosition_client.call(posCmd);
         }
-        else if(circle_num == 16 && circle16_arrive_flag) {
+        else if(circle_num == 16 && circle16_arrive_flag && !circle16_loop_flag) {
 
         }
-        else if(circle_num == 16 && circle16_obs_flag) {
+
+        else if(circle_num == 16 && circle16_obs_flag && !circle16_loop_flag) {
             posCmd.request.x = ego_target_pose.pose.position.x;
             posCmd.request.y = -ego_target_pose.pose.position.y;
             posCmd.request.z = -ego_target_pose.pose.position.z;
             posCmd.request.yaw = circle16_yaw;
             setGoalPosition_client.call(posCmd);
-        } 
-        else {
-            if(ego_init_flag) {
+        }
+        else if(ego_init_flag && !circle16_loop_flag) {
                 posCmd.request.x = posture_cmd.x;
                 posCmd.request.y = -posture_cmd.y;
                 posCmd.request.z = -posture_cmd.z;
@@ -582,7 +622,20 @@ void uavControl::uavControlTask(void) {
                     posCmd.request.yaw = -posture_cmd.yaw;
                 }
                 setGoalPosition_client.call(posCmd);
-            }
+        }
+        else if(circle16_loop_flag && circle_num == 16 && circle16_point == 0){
+            posCmd.request.x = circle16_aim_point.x;
+            posCmd.request.y = circle16_aim_point.y;
+            posCmd.request.z = -circle16_aim_point.z;
+            setGoalPosition_client.call(posCmd);
+            ROS_ERROR("TEST3");
+        }
+        else if(circle16_loop_flag && circle_num == 16 && circle16_point == 1){
+            posCmd.request.x = circle16_clash_point.x - 10;
+            posCmd.request.y = circle16_clash_point.y;
+            posCmd.request.z = -circle16_aim_point.z;
+            setGoalPosition_client.call(posCmd);
+            ROS_ERROR("TEST4");
         }
     }
 }

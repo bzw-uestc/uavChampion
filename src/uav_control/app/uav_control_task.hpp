@@ -77,6 +77,7 @@ private:
     
     int circle_num = 0;
     int circle_type = 1; //圈的种类 1为红圈 0为黄圈
+    int circle16_point = 3;
     
     
     bool reset_flag = false;
@@ -93,8 +94,9 @@ private:
     bool circle16_arrive_flag = false;  //到达对位点的flag
     bool circle16_aim_flag = false;  //冲向动态圈的flag
     bool circle16_clash_flag = false;  //冲向动态圈的flag
+    bool circle16_loop_flag = false;   //进入循环穿第16个圈
     int  circle16_clash_rotation = 0;     //最高点的方向 -1为在无人机左边 1为在无人机右边
-    cv::Point3f circle16_aim_point;
+    cv::Point3f circle16_aim_point;     //穿圈前的对位点
     cv::Point3f circle16_clash_point;  //冲向动态圈的目标点
     int circle16_rotation_flag = false;       //用参考位姿算出来圈的旋转方向 -1为向左摆  1为向右摆
     double circle16_camera_y_max = -10;
