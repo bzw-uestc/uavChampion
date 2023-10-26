@@ -64,8 +64,8 @@ int main(int argc, char** argv)
   sub_right_image = nh.subscribe("/airsim_node/drone_1/front_right/Scene", 1, image1_callback);
 
   std::string package_path = ros::package::getPath("uav_control");
-  // std::string model_path_str = package_path + "/detect_model/yolov5n4090_2.trt";
-  std::string model_path_str = package_path + "/detect_model/yolov5n_1025_lzh.trt";
+  std::string model_path_str = package_path + "/detect_model/yolov5n4090_2.trt";
+  // std::string model_path_str = package_path + "/detect_model/yolov5n_1025_lzh.trt";
   char* model_path=const_cast<char*>(model_path_str.c_str());
   ROS_ERROR("model_path:%s", model_path);
   Yolo yolo_detect(model_path);

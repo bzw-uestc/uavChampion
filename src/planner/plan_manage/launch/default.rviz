@@ -145,8 +145,8 @@ Visualization Manager:
             - Alpha: 1
               Autocompute Intensity Bounds: true
               Autocompute Value Bounds:
-                Max Value: 7.114999771118164
-                Min Value: 0.06499999761581421
+                Max Value: 14.125
+                Min Value: 4.114999771118164
                 Value: true
               Axis: Z
               Channel Name: intensity
@@ -199,7 +199,7 @@ Visualization Manager:
       Enabled: true
       Name: drone0
     - Class: rviz/Image
-      Enabled: false
+      Enabled: true
       Image Topic: /detect_image_left
       Max Value: 1
       Median window: 5
@@ -209,7 +209,7 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: raw
       Unreliable: false
-      Value: false
+      Value: true
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -270,7 +270,7 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/Image
-      Enabled: true
+      Enabled: false
       Image Topic: /detect_image_left
       Max Value: 1
       Median window: 5
@@ -280,7 +280,7 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: raw
       Unreliable: false
-      Value: true
+      Value: false
     - Angle Tolerance: 0.10000000149011612
       Class: rviz/Odometry
       Covariance:
@@ -375,7 +375,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 15.437124252319336
+      Distance: 34.12656021118164
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -383,9 +383,9 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 10.373090744018555
-        Y: -7.554629802703857
-        Z: 1.1730015103239566e-05
+        X: 9.638406753540039
+        Y: -6.023478031158447
+        Z: 1.7452061001677066e-05
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -393,7 +393,7 @@ Visualization Manager:
       Near Clip Distance: 0.009999999776482582
       Pitch: 0.48479747772216797
       Target Frame: <Fixed Frame>
-      Yaw: 3.336582660675049
+      Yaw: 3.341582775115967
     Saved:
       - Class: rviz/FPS
         Enable Stereo Rendering:

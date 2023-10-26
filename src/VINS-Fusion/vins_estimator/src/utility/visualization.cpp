@@ -65,38 +65,78 @@ void pubLatestOdometry(const Eigen::Vector3d &P, const Eigen::Quaterniond &Q, co
         odometry.pose.pose.position.z = P.z();
 
         //vins中的里程計y軸和yaw軸是相反的 需要做座標系的轉換
-        nav_msgs::Odometry odometry_temp;
+        nav_msgs::Odometry odometry_temp,odometry_temp1;
         odometry_temp.pose.pose.orientation.x = Q.x();
         odometry_temp.pose.pose.orientation.y = Q.y();
         odometry_temp.pose.pose.orientation.z = Q.z();
         odometry_temp.pose.pose.orientation.w = Q.w();
+
+        odometry_temp1.pose.pose.orientation.x = Q.x();
+        odometry_temp1.pose.pose.orientation.y = Q.y();
+        odometry_temp1.pose.pose.orientation.z = Q.z();
+        odometry_temp1.pose.pose.orientation.w = Q.w();
+
         pd_odometry.header.frame_id = "world";
         pd_odometry.header.stamp = ros::Time(t);
         pd_odometry.pose.pose.position = odometry.pose.pose.position;
         pd_odometry.pose.pose.position.y = -odometry.pose.pose.position.y;
         pd_odometry.pose.pose.position.z = -odometry.pose.pose.position.z;
         
+        Eigen::Quaterniond q1(odometry_temp1.pose.pose.orientation.w, odometry_temp1.pose.pose.orientation.x, 
+        odometry_temp1.pose.pose.orientation.y, odometry_temp1.pose.pose.orientation.z);
+        Eigen::Matrix3d rotationMatrix = q1.toRotationMatrix();
+        Eigen::Vector3d euler_angles = rotationMatrix.eulerAngles(0, 1, 2);
+        euler_angles[2] = -CV_PI - euler_angles[2];
+        // euler_angles[2] = -CV_PI - euler_angles[2];
+        euler_angles[0] = 0;
+        euler_angles[1] = 0;
+        Eigen::Matrix3d modifiedRotationMatrix;
+        modifiedRotationMatrix =  Eigen::AngleAxisd(euler_angles[0], Eigen::Vector3d::UnitX())
+                                * Eigen::AngleAxisd(euler_angles[1], Eigen::Vector3d::UnitY())
+                                * Eigen::AngleAxisd(euler_angles[2], Eigen::Vector3d::UnitZ());
+        ROS_ERROR("modifiedRotationMatrix:%f,%f,%f,%f,%f,%f,%f,%f,%f",modifiedRotationMatrix(0,0),modifiedRotationMatrix(0,1),modifiedRotationMatrix(0,2)
+                                                                     ,modifiedRotationMatrix(1,0),modifiedRotationMatrix(1,1),modifiedRotationMatrix(1,2)
+                                                                     ,modifiedRotationMatrix(2,0),modifiedRotationMatrix(2,1),modifiedRotationMatrix(2,2));
+        Eigen::Quaterniond q2(modifiedRotationMatrix);
+        odometry_temp1.pose.pose.orientation.w = q2.w();
+        odometry_temp1.pose.pose.orientation.x = q2.x();
+        odometry_temp1.pose.pose.orientation.y = q2.y();
+        odometry_temp1.pose.pose.orientation.z = q2.z();
+        ROS_ERROR("Eigen_eulerAngles:%f,%f,%f",euler_angles[0],euler_angles[1],euler_angles[2]);
+        ROS_ERROR("Eigen_orientation:%f,%f,%f,%f",odometry_temp1.pose.pose.orientation.w,odometry_temp1.pose.pose.orientation.x,odometry_temp1.pose.pose.orientation.y,odometry_temp1.pose.pose.orientation.z);
+
+        // odometry.pose.pose.orientation = odometry_temp1.pose.pose.orientation;
+        euler_angles[0] = -euler_angles[0];
+        euler_angles[1] = -euler_angles[1];
+        euler_angles[2] = -euler_angles[2];
+        Eigen::Matrix3d modifiedRotationMatrix2;
+        modifiedRotationMatrix2 = Eigen::AngleAxisd(euler_angles[0], Eigen::Vector3d::UnitX())
+                                * Eigen::AngleAxisd(euler_angles[1], Eigen::Vector3d::UnitY())
+                                * Eigen::AngleAxisd(euler_angles[2], Eigen::Vector3d::UnitZ());
+        Eigen::Quaterniond q3(modifiedRotationMatrix2);
+        odometry_temp1.pose.pose.orientation.w = q3.w();
+        odometry_temp1.pose.pose.orientation.x = q3.x();
+        odometry_temp1.pose.pose.orientation.y = q3.y();
+        odometry_temp1.pose.pose.orientation.z = q3.z();
+        // pd_odometry.pose.pose.orientation = odometry_temp1.pose.pose.orientation;
+
+
         tf::Quaternion quat;
         tf::quaternionMsgToTF(odometry_temp.pose.pose.orientation, quat);
         double roll, pitch, yaw;//定义存储r\p\y的容器
         tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);//进行转换
-        yaw = yaw;
-
-        roll = -(roll + 3.1415);
-        if (roll < -6.00)
-        {
-            roll = -(roll + 6.28);
-        }
-
-        pitch = pitch;
-        // ROS_ERROR("VINSO:%f,%f,%f", roll,pitch,yaw);
+        roll = 0.0;
+        
         odometry_temp.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw);//返回四元数
         odometry.pose.pose.orientation = odometry_temp.pose.pose.orientation;
+        ROS_ERROR("tf_eulerAngles:%f,%f,%f",roll,pitch,yaw);
+        ROS_ERROR("tf_orientation:%f,%f,%f,%f",odometry_temp.pose.pose.orientation.w,odometry_temp.pose.pose.orientation.x,odometry_temp.pose.pose.orientation.y,odometry_temp.pose.pose.orientation.z);
         roll = -roll;
         pitch = -pitch;
         yaw = -yaw;
         odometry_temp.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw);//返回四元数
         pd_odometry.pose.pose.orientation = odometry_temp.pose.pose.orientation;
+        
 
         odometry.twist.twist.linear.x = V.x();
         odometry.twist.twist.linear.y = V.y();

@@ -931,7 +931,7 @@ namespace ego_planner
           {
             pos_t = pos_t_temp;
             dist = (pos_t - start_pt_).norm();
-            cout << "Escape conor case \"getLocalTarget\"" << endl;
+            // cout << "Escape conor case \"getLocalTarget\"" << endl;
             break;
           }
         }

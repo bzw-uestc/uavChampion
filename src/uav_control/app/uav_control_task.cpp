@@ -15,7 +15,11 @@ void uavControl::uavControlTask(void) {
     }
     else if(!takeoff_flag) {
         sim_takeoff.request.waitOnLastTask = 1;
-        takeoff_flag = sim_takeoff_client.call(sim_takeoff);
+        // takeoff_flag = sim_takeoff_client.call(sim_takeoff);
+        takeoff_flag = true;
+        ego_target_pose.pose.position.x = 5 ;
+        ego_target_pose.pose.position.y = 0 ;
+        ego_target_pose.pose.position.z = 1 ;
     }
     else if(circle_msg_flag) { 
         cv::Point3f circlePositionWorld;
@@ -51,11 +55,11 @@ void uavControl::uavControlTask(void) {
                 }
             }
             // circleTypeDetect
-            // ROS_ERROR("suare:%f",circleSquareMax[0]);
+            
             if(!uav_reached_location(ego_target_pose,visual_pose,15.0) ) {
                 drone_slowly_flag = 0;
             }
-            else if(circleSquareMax[0] > 2000.0 && circleSquareMax[1] > 2000.0 && uav_reached_location(ego_target_pose,visual_pose,12.0) && drone_slowly_flag <=2) {
+            else if(circleSquareMax[0] > 3000.0 && circleSquareMax[1] > 3000.0 && uav_reached_location(ego_target_pose,visual_pose,12.0) && drone_slowly_flag <=2) {
                 drone_slowly_flag = 2;
             }
             else if(circleSquareMax[0] > 1200.0 && circleSquareMax[1] > 1200.0 && uav_reached_location(ego_target_pose,visual_pose,12.0) && drone_slowly_flag <= 1 ) { //&& circleTypeDetect[0] == circle_type && circleTypeDetect[1] == circle_type
@@ -69,14 +73,196 @@ void uavControl::uavControlTask(void) {
             // }
             if(circle_num == 13 && !drone_slowly_flag) drone_slowly_flag = 1;
             if(circle_num == 14 && !drone_slowly_flag) drone_slowly_flag = 1;
-            if(circle_num == 15 && circle15_flag && !drone_slowly_flag) drone_slowly_flag = 3;
+            if(circle_num == 15 && circle15_flag && !drone_slowly_flag) drone_slowly_flag = 2;  //////!!!!!!!!!!
             // ROS_ERROR("ego: x:%f,y:%f,z:%f",ego_target_pose.pose.position.x,ego_target_pose.pose.position.y,ego_target_pose.pose.position.z);
             // ROS_ERROR("visual: x:%f,y:%f,z:%f",visual_pose.pose.pose.position.x,visual_pose.pose.pose.position.y,visual_pose.pose.pose.position.z);
             //////////////////////////////当检测面积足够大且无人机离参考位姿较近时才解算圈的世界坐标////////////////////////////////////
-            if (circleSquareMax[0] > 1500.0 && circleSquareMax[1] > 1500.0 && circleSquareMax[0] < 20000.0 && circleSquareMax[1] < 20000.0 
+            if(circle_num == 16) {  
+                cv::Point3f circle16_ref_cruuent;
+                circle16_ref_cruuent.x = circle_poses_ref->poses.at(circle_num).position.x;
+                circle16_ref_cruuent.y = circle_poses_ref->poses.at(circle_num).position.y;
+                circle16_ref_cruuent.z = -circle_poses_ref->poses.at(circle_num).position.z;
+                
+                if(circle16_min_z > circle16_ref_cruuent.z){
+                    circle16_min_z = circle16_ref_cruuent.z;
+                }
+                if(circle16_ref_cruuent.y - circle16_ref_last.y > 0.0)
+                {
+                    circle16_rotation_flag = 1;                  //向右旋转
+                }
+                else if (circle16_ref_cruuent.y - circle16_ref_last.y < 0.0)
+                {
+                    circle16_rotation_flag = -1;                // 向左旋转
+                }
+                circle16_ref_last = circle16_ref_cruuent;
+                // ROS_ERROR("circle16_rotation_flag:%d;circle16_min_z:%f",circle16_rotation_flag,circle16_min_z);
+                
+
+                if(circle16_obs_flag && !circle16_arrive_flag &&uav_reached_location(ego_target_pose,visual_pose,0.5)) {
+                    circle16_arrive_flag = true;
+                    circle16_arrive_time = ros::Time::now().toSec();
+                    ROS_ERROR("get circle16 mid point!");
+                }
+                else if(circle16_arrive_flag && !circle16_clash_flag && circleSquareMax[0] > 8000.0 && circleSquareMax[1] > 8000.0 && circleSquareMax[0] < 100000.0 && circleSquareMax[1] < 100000.0) {
+                    // ROS_ERROR("suare:%f",circleSquareMax[0]);
+                    // std::vector<double> upm = detectCirclePosion(UpperMidpoint,circleTag);
+                    std::vector<double> lom = detectCirclePosion(LowerMidpoint,circleTag);
+                    // std::vector<double> lem = detectCirclePosion(LeftMidpoint,circleTag);
+                    // std::vector<double> rim = detectCirclePosion(RightMidpoint,circleTag); //获取检测信息
+                    std::vector<cv::Point2f> circleImagePoints = 
+                    {cv::Point2f(lom[0],lom[1])}; //图像的像素点坐标 pnp用
+                    // // 颜色
+                    // cv::Scalar color(255, 0, 0); // 蓝色 (BGR颜色)
+                    // // 画一个点
+                    // cv::circle(image_left, circleImagePoints[0], 2, color, -1); // 5表示点的半径，-1表示填充点
+                    // cv::circle(image_left, circleImagePoints[1], 2, color, -1); // 5表示点的半径，-1表示填充点
+                    // cv::circle(image_left, circleImagePoints[2], 2, color, -1); // 5表示点的半径，-1表示填充点
+                    // cv::circle(image_left, circleImagePoints[3], 2, color, -1); // 5表示点的半径，-1表示填充点
+                    // // 显示图像
+                    // cv::imshow("result_left", image_left);
+                    // cv::imshow("result_right", image_right);
+                    // cv::waitKey(1);
+                    if (lom[2] != 0) {//筛除异常值 会把深度异常的点筛除掉
+                        circlePositionCamera.x = lom[2];
+                        circlePositionCamera.y = lom[3];
+                        circlePositionCamera.z = lom[4];
+                        circlePositionCamera.z += 15;
+                        Eigen::Quaterniond quaternion(visual_pose.pose.pose.orientation.w, visual_pose.pose.pose.orientation.x, visual_pose.pose.pose.orientation.y, visual_pose.pose.pose.orientation.z);
+                        Eigen::Vector3d translation(visual_pose.pose.pose.position.x, visual_pose.pose.pose.position.y, -visual_pose.pose.pose.position.z);
+                        Eigen::Matrix4d Twb = Eigen::Matrix4d::Identity(); //IMU坐标系到世界坐标系的变换 实际上就是视觉里程计
+                        Eigen::Vector4d Pc;
+                        Eigen::Vector4d Pw;
+                        
+                        /*获取视觉里程计到世界坐标系的变换矩阵*/
+                        Twb.block<3, 3>(0, 0) = quaternion.toRotationMatrix();
+                        Twb.block<3, 1>(0, 3) = translation;
+                        // 创建一个包含原始点坐标的齐次坐标向量
+
+                        Pc << circlePositionCamera.z, circlePositionCamera.x, -circlePositionCamera.y, 1.0;
+                        Pw = Twb * Pc;
+                        // 提取变换后的世界坐标系下的坐标
+                        circlePositionWorld.x = Pw(0);
+                        circlePositionWorld.y = Pw(1);
+                        circlePositionWorld.z = Pw(2);
+                        if(circlePositionWorld.z < 0.2) circlePositionWorld.z = 0.2;
+
+                        visual_detect_flag = true;
+                        double circle16_dt = ros::Time::now().toSec() - circle16_arrive_time;
+                        
+                        if(circle16_dt > 4 && circle16_dt < 8 && circlePositionWorld.z < 10.0 ) {
+                            circle16_world_y_sum += circlePositionWorld.y;
+                            circle16_world_y_cnt++;
+                            circle16_world_y_avr = circle16_world_y_sum / circle16_world_y_cnt;
+                            ROS_ERROR("now:%f,avr:%f",circlePositionWorld.y,circle16_world_y_avr);
+                            if((circlePositionWorld.z - 0.5) > circle16_clash_point.z) {
+                                if(circle16_clash_point.y > circle16_world_y_avr){
+                                    circle16_clash_rotation = 1;
+                                }
+                                else if(circle16_clash_point.y < circle16_world_y_avr)
+                                {
+                                    circle16_clash_rotation = -1;
+                                }
+                                
+                                if(circle16_clash_point.y == 0 || abs(circle16_clash_point.y - circlePositionWorld.y) < 2.0) {
+                                    circle16_clash_point.x = circlePositionWorld.x;
+                                    circle16_clash_point.y = circlePositionWorld.y;
+                                    circle16_clash_point.z = circlePositionWorld.z - 0.5;
+
+                                    Eigen::Vector4d Pc_mid;
+                                    Pc_mid << 0, circlePositionCamera.x, -circlePositionCamera.y, 1.0;
+                                    Eigen::Vector4d Pw_mid = Twb * Pc_mid;
+                                    // 提取变换后的世界坐标系下的坐标
+
+                                    circle16_aim_point.x = Pw_mid(0);
+                                    circle16_aim_point.y = Pw_mid(1);
+                                    circle16_aim_point.z = Pw_mid(2) - 0.5;
+                                    ROS_ERROR("clash:x:%f y:%f z:%f ",circle16_clash_point.x,circle16_clash_point.y,circle16_clash_point.z);
+                                    ROS_ERROR("aim:x:%f y:%f z:%f ",circle16_aim_point.x,circle16_aim_point.y,circle16_aim_point.z);
+                                }
+                                // ROS_ERROR("circlePositionWorld.y:%f;visual_pose.pose.pose.position.y:%f",circlePositionWorld.y,visual_pose.pose.pose.position.y);
+                            }
+                        }
+                        if(circle16_dt > 9) {  //
+                            circle16_aim_flag = true;
+                        }
+                    
+                        ROS_ERROR("circle16_clash_rotation:%d,circle_rotation_true:%d",circle16_clash_rotation,circle16_rotation_flag);
+                        if(circle16_dt > 15 && circle16_ref_cruuent.z - circle16_min_z < 0.4 && circle16_rotation_flag == circle16_clash_rotation) {  //
+                            circle16_clash_flag = true;
+                            // if(circle16_clash_rotation == 1) { //冲右上点
+                            //     circle16_clash_point.y -= 1;
+                            // }
+                            // else { //冲左上点
+                            //     circle16_clash_point.y += 1;
+                            // }
+                        }
+                        // ROS_ERROR("circle:x:%f,y:%f,z:%f,maxy:%f,maxX:%f,minX:%f",circlePositionCamera.x,circlePositionCamera.y,circlePositionCamera.z,circle16_camera_y_max,circle16_camera_x_max,circle16_camera_x_min);
+                    }
+                }
+                else if(circleSquareMax[0] > 1500.0 && circleSquareMax[1] > 1500.0 && circleSquareMax[0] < 2000.0 && circleSquareMax[1] < 2000.0 && !circle16_obs_flag) {
+                    std::vector<double> upm = detectCirclePosion(UpperMidpoint,circleTag);
+                    std::vector<double> lom = detectCirclePosion(LowerMidpoint,circleTag);
+                    std::vector<double> lem = detectCirclePosion(LeftMidpoint,circleTag);
+                    std::vector<double> rim = detectCirclePosion(RightMidpoint,circleTag); //获取检测信息
+                    std::vector<cv::Point2f> circleImagePoints = 
+                    {cv::Point2f(upm[0],upm[1]), cv::Point2f(lom[0],lom[1]), cv::Point2f(lem[0],lem[1]), cv::Point2f(rim[0],rim[1])}; //图像的像素点坐标 pnp用
+
+                    if (upm[2] != 0 && lom[2] != 0 && lem[2] != 0 && rim[2] != 0) {//筛除异常值 会把深度异常的点筛除掉
+                        circlePositionCamera.x = (upm[2] + lom[2] + lem[2] + rim[2]) / 4;
+                        circlePositionCamera.y = (upm[3] + lom[3] + lem[3] + rim[3]) / 4;
+                        circlePositionCamera.z = (upm[4] + lom[4] + lem[4] + rim[4]) / 4;
+
+                        Eigen::Quaterniond quaternion(visual_pose.pose.pose.orientation.w, visual_pose.pose.pose.orientation.x, visual_pose.pose.pose.orientation.y, visual_pose.pose.pose.orientation.z);
+                        Eigen::Vector3d translation(visual_pose.pose.pose.position.x, visual_pose.pose.pose.position.y, -visual_pose.pose.pose.position.z);
+                        Eigen::Matrix4d Twb = Eigen::Matrix4d::Identity(); //IMU坐标系到世界坐标系的变换 实际上就是视觉里程计
+                        Eigen::Vector4d Pc;
+                        Eigen::Vector4d Pw;
+                        if(circlePositionCamera.z > 6.0) {
+                            circlePositionCamera.z -= 4.0;
+                            /*获取视觉里程计到世界坐标系的变换矩阵*/
+                            Twb.block<3, 3>(0, 0) = quaternion.toRotationMatrix();
+                            Twb.block<3, 1>(0, 3) = translation;
+                            // 创建一个包含原始点坐标的齐次坐标向量
+
+                            Pc << circlePositionCamera.z, circlePositionCamera.x, -circlePositionCamera.y, 1.0;
+                            Pw = Twb * Pc;
+                            // 提取变换后的世界坐标系下的坐标
+                            circlePositionWorld.x = Pw(0);
+                            circlePositionWorld.y = Pw(1);
+                            circlePositionWorld.z = Pw(2);
+                            if(circlePositionWorld.z < 0.2) circlePositionWorld.z = 0.2;
+
+                            // while(!circle16PositionWorld.empty())
+                            // {
+                            //     circle16PositionWorld.pop_back();
+                            // }
+                            // circle16PositionWorld.push_back(circlePositionWorld);
+                            // circlePositionCamera.z = circlePositionCamera.z + 14;
+                            // Pc << circlePositionCamera.z, circlePositionCamera.x, -circlePositionCamera.y, 1.0;
+                            // Pw = Twb * Pc;
+                            // circlePositionWorld.x = Pw(0);
+                            // circlePositionWorld.y = Pw(1);
+                            // circlePositionWorld.z = Pw(2) + 0.3;
+                            // circle16PositionWorld.push_back(circlePositionWorld);
+                            
+                            visual_detect_flag = true;
+                        }
+                    }
+                }
+                else if(circleSquareMax[0] > 3100.0 && circleSquareMax[1] > 3100.0 && !circle16_obs_flag) {
+                    // circle16_point = 0;
+                    circle16_obs_flag = true;
+                    nav_msgs::Odometry visual_pose_temp;
+                    visual_pose_temp = visual_pose;
+                    Eigen::Quaterniond q1(visual_pose_temp.pose.pose.orientation.w, visual_pose_temp.pose.pose.orientation.x, 
+                    visual_pose_temp.pose.pose.orientation.y, visual_pose_temp.pose.pose.orientation.z);
+                    Eigen::Matrix3d rotationMatrix = q1.toRotationMatrix();
+                    Eigen::Vector3d euler_angles = rotationMatrix.eulerAngles(0, 1, 2);
+                    circle16_yaw = 0;
+                }
+            }
+            else if (circleSquareMax[0] > 1200.0 && circleSquareMax[1] > 1200.0 && circleSquareMax[0] < 20000.0 && circleSquareMax[1] < 20000.0 
             && uav_reached_location(ego_target_pose,visual_pose,12.0) && circleTypeDetect[0] == circle_type && circleTypeDetect[1] == circle_type){
-            // if (circleWidthMax[0] > 32.0 && circleWidthMax[1] > 32.0 && circleWidthMax[0] < 200.0 && circleWidthMax[1] < 200.0 
-            // && uav_reached_location(ego_target_pose,visual_pose,8.0)){
                 std::vector<double> upm = detectCirclePosion(UpperMidpoint,circleTag);
                 std::vector<double> lom = detectCirclePosion(LowerMidpoint,circleTag);
                 std::vector<double> lem = detectCirclePosion(LeftMidpoint,circleTag);
@@ -89,7 +275,7 @@ void uavControl::uavControlTask(void) {
                     circlePositionCamera.y = (upm[3] + lom[3] + lem[3] + rim[3]) / 4;
                     circlePositionCamera.z = (upm[4] + lom[4] + lem[4] + rim[4]) / 4;
                     
-                    if(circlePositionCamera.z > 4.0) {
+                    if(circlePositionCamera.z > 5.0) {
                         if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 7.0) circlePositionCamera.z -= 5.0;
                         else if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 6.0) circlePositionCamera.z -= 4.0;
                         else if((abs(circlePositionCamera.x) > 2.5 || abs(circlePositionCamera.y) > 2.5 ) && circlePositionCamera.z > 5.0) circlePositionCamera.z -= 3.0;
@@ -127,9 +313,8 @@ void uavControl::uavControlTask(void) {
                         circlePositionWorld.y = Pw(1);
                         circlePositionWorld.z = Pw(2);
                         if(circlePositionWorld.z < 0.2) circlePositionWorld.z = 0.2;
-                        visual_detect_flag = 1;
+                        visual_detect_flag = true;
                     }
-                    
                     // ROS_ERROR("x:%f,y:%f,z:%f",circlePositionWorld.x,circlePositionWorld.y,circlePositionWorld.z);
                 }
             }
@@ -143,7 +328,7 @@ void uavControl::uavControlTask(void) {
         // ROS_ERROR("task3:%dms",time2);
         last_time2 = start2;
         //////////////////////////////判断是否到达目标点，前往下一个障碍圈////////////////////////////////////////
-        if(uav_reached_location(ego_target_pose,visual_pose,1.2))  
+        if(uav_reached_location(ego_target_pose,visual_pose,1.2) && circle_num!=16)  
         {
             if(pd_delay_flag == false) {
                 pd_delay_flag = true;
@@ -195,35 +380,38 @@ void uavControl::uavControlTask(void) {
             mid_point_flag = false;    //重置状态机
         }
         ////////////////////////////按策略重新规划下一帧的目标点////////////////////////////////////////////////
-        if(visual_detect_flag) { //进入视觉模式 && (circle_num != 13 || (circle_num == 13 && circle13_flag)）
+        if(circle_num == 16 && circle16_arrive_flag) {
+            if(circlePositionWorld.x!=0 && circlePositionWorld.y!=0 && circlePositionWorld.z!=0) {
+                ego_target_pose.pose.position.x = circle16_aim_point.x;
+                ego_target_pose.pose.position.y = -circle16_aim_point.y;
+                ego_target_pose.pose.position.z = circle16_aim_point.z;
+                nav_msgs::Odometry visual_pose_temp;
+                visual_pose_temp = visual_pose;
+
+                Eigen::Quaterniond q1(visual_pose_temp.pose.pose.orientation.w, visual_pose_temp.pose.pose.orientation.x, 
+                visual_pose_temp.pose.pose.orientation.y, visual_pose_temp.pose.pose.orientation.z);
+                Eigen::Matrix3d rotationMatrix = q1.toRotationMatrix();
+                Eigen::Vector3d euler_angles = rotationMatrix.eulerAngles(0, 1, 2);
+                euler_angles[2] = -euler_angles[2];
+                Eigen::Matrix3d modifiedRotationMatrix;
+                modifiedRotationMatrix = Eigen::AngleAxisd(euler_angles[0], Eigen::Vector3d::UnitX())
+                           * Eigen::AngleAxisd(euler_angles[1], Eigen::Vector3d::UnitY())
+                           * Eigen::AngleAxisd(euler_angles[2], Eigen::Vector3d::UnitZ());
+                Eigen::Quaterniond q2(modifiedRotationMatrix);
+                ego_target_pose.pose.orientation.w = q2.w();
+                ego_target_pose.pose.orientation.x = q2.x();
+                ego_target_pose.pose.orientation.y = q2.y();
+                ego_target_pose.pose.orientation.z = q2.z();            
+            }
+        }
+        else if(visual_detect_flag) { //进入视觉模式 && (circle_num != 13 || (circle_num == 13 && circle13_flag)）
             if(circlePositionWorld.x!=0 && circlePositionWorld.y!=0 && circlePositionWorld.z!=0) {
                 ego_target_pose.pose.position.x = circlePositionWorld.x;
                 ego_target_pose.pose.position.y = -circlePositionWorld.y;
                 ego_target_pose.pose.position.z = circlePositionWorld.z;
+                // ROS_ERROR("World:x:%f,y:%f,z:%f",ego_target_pose.pose.position.x,ego_target_pose.pose.position.y,ego_target_pose.pose.position.z);
                 nav_msgs::Odometry visual_pose_temp;
                 visual_pose_temp = visual_pose;
-
-                
-
-                // Eigen::Quaterniond q1(visual_pose_temp.pose.pose.orientation.w, visual_pose_temp.pose.pose.orientation.x, 
-                // visual_pose_temp.pose.pose.orientation.y, visual_pose_temp.pose.pose.orientation.z);
-                // Eigen::Vector3d eulerAngle=q1.matrix().eulerAngles(2,1,0);
-                // double yaw,pitch,roll;
-                // roll = eulerAngle(0);
-                // pitch = eulerAngle(1);
-                // yaw = eulerAngle(2);
-                // yaw = -yaw;
-                // ROS_ERROR("yaw:%f",yaw);
-                // Eigen::Vector3d eulerAngle2(yaw,pitch,roll);
-                // Eigen::AngleAxisd rollAngle(Eigen::AngleAxisd(eulerAngle2(2),Eigen::Vector3d::UnitX()));
-                // Eigen::AngleAxisd pitchAngle(Eigen::AngleAxisd(eulerAngle2(1),Eigen::Vector3d::UnitY()));
-                // Eigen::AngleAxisd yawAngle(Eigen::AngleAxisd(eulerAngle2(0),Eigen::Vector3d::UnitZ())); 
-                // Eigen::Quaterniond q2 = yawAngle*pitchAngle*rollAngle;
-
-                // ego_target_pose.pose.orientation.w = q2.w();
-                // ego_target_pose.pose.orientation.x = q2.x();
-                // ego_target_pose.pose.orientation.y = q2.y();
-                // ego_target_pose.pose.orientation.z = q2.z();
 
                 Eigen::Quaterniond q1(visual_pose_temp.pose.pose.orientation.w, visual_pose_temp.pose.pose.orientation.x, 
                 visual_pose_temp.pose.pose.orientation.y, visual_pose_temp.pose.pose.orientation.z);
@@ -320,18 +508,21 @@ void uavControl::uavControlTask(void) {
             ego_target_pose.pose.orientation.z = circle_q.z();
         }
         
-        if(drone_slowly_flag == 3) {
+        if(circle16_clash_flag) {
+            drone_max_vel = 10;
+            drone_max_acc = MAX_ACC_FAST;
+        }
+        else if(drone_slowly_flag == 3) {
             drone_max_vel = MAX_VEL_SLOW_SLOW;
             drone_max_acc = MAX_ACC_NORMAL;
         }
-        
         else if(drone_slowly_flag == 2) {
             drone_max_vel = MAX_VEL_SLOW;
             drone_max_acc = MAX_ACC_NORMAL;
         }
         else if(drone_slowly_flag == 1) {
             drone_max_vel = MAX_VEL_MID;
-            drone_max_acc = MAX_ACC_FAST;
+            drone_max_acc = MAX_ACC_NORMAL;
         }
         else {
             drone_max_vel = MAX_VEL_FAST;
@@ -360,14 +551,38 @@ void uavControl::uavControlTask(void) {
                 pd_delay_flag = false;
             }
         }
-        else {
-            posCmd.request.x = posture_cmd.x;
-            posCmd.request.y = -posture_cmd.y;
-            posCmd.request.z = -posture_cmd.z;
-            if(!aim_flag) {  //too far no yaw
-                posCmd.request.yaw = -posture_cmd.yaw;
-            }
+        else if(circle_num == 16 && circle16_clash_flag) {
+            posCmd.request.x = circle16_clash_point.x;
+            posCmd.request.y = circle16_clash_point.y;
+            posCmd.request.z = -circle16_aim_point.z;
             setGoalPosition_client.call(posCmd);
+        }
+        else if(circle_num == 16 && circle16_aim_flag) {
+            posCmd.request.x = circle16_aim_point.x;
+            posCmd.request.y = circle16_aim_point.y;
+            posCmd.request.z = -circle16_aim_point.z;
+            setGoalPosition_client.call(posCmd);
+        }
+        else if(circle_num == 16 && circle16_arrive_flag) {
+
+        }
+        else if(circle_num == 16 && circle16_obs_flag) {
+            posCmd.request.x = ego_target_pose.pose.position.x;
+            posCmd.request.y = -ego_target_pose.pose.position.y;
+            posCmd.request.z = -ego_target_pose.pose.position.z;
+            posCmd.request.yaw = circle16_yaw;
+            setGoalPosition_client.call(posCmd);
+        } 
+        else {
+            if(ego_init_flag) {
+                posCmd.request.x = posture_cmd.x;
+                posCmd.request.y = -posture_cmd.y;
+                posCmd.request.z = -posture_cmd.z;
+                if(!aim_flag) {  //too far no yaw
+                    posCmd.request.yaw = -posture_cmd.yaw;
+                }
+                setGoalPosition_client.call(posCmd);
+            }
         }
     }
 }
@@ -375,7 +590,7 @@ void uavControl::uavControlTask(void) {
 uavControl::uavControl(ros::NodeHandle &nh) {
     posCmd.request.x = 0;
     posCmd.request.y = 0;
-    posCmd.request.z = -2;
+    posCmd.request.z = 0;
     posCmd.request.yaw = 0;
     
     circle_poses_ref_sub = nh.subscribe("/airsim_node/drone_1/circle_poses", 10, &uavControl::circlePosesRef_callBack,this); //仿真器输出的障碍圈参考位姿
@@ -445,7 +660,7 @@ void uavControl::egoPosCmd_callBack(const quadrotor_msgs::PositionCommand& pos_c
     posture_cmd.y = pos_cmds.position.y;
     posture_cmd.z = pos_cmds.position.z;
     posture_cmd.yaw = pos_cmds.yaw;
-    // posture_cmd.yaw = 0;
+    ego_init_flag = true;
     posture_cmd.uav_twist.linear.x = pos_cmds.velocity.x;
     posture_cmd.uav_twist.linear.y = -pos_cmds.velocity.y;
     posture_cmd.uav_twist.linear.z = -pos_cmds.velocity.z;
@@ -488,6 +703,12 @@ std::vector<double> uavControl::detectCirclePosion(SelectPoint p, int *circleTag
         y1_left = circle_detect_msg[0][circleTag[0]*5 + 1] + circle_detect_msg[0][circleTag[0]*5+3] - 5; //左下角y坐标
         x1_right = circle_detect_msg[1][circleTag[1]*5] + 0.5 *circle_detect_msg[1][circleTag[1]*5+2];
         y1_right = circle_detect_msg[1][circleTag[1]*5 + 1] + circle_detect_msg[1][circleTag[1]*5+3] - 5;
+        if (circle_num == 16){
+            x1_left = circle_detect_msg[0][circleTag[0]*5] + 0.5 *circle_detect_msg[0][circleTag[0]*5+2]; //左上角x坐标+宽度的一半
+            y1_left = circle_detect_msg[0][circleTag[0]*5 + 1] + circle_detect_msg[0][circleTag[0]*5+3] - 12; //左下角y坐标
+            x1_right = circle_detect_msg[1][circleTag[1]*5] + 0.5 *circle_detect_msg[1][circleTag[1]*5+2];
+            y1_right = circle_detect_msg[1][circleTag[1]*5 + 1] + circle_detect_msg[1][circleTag[1]*5+3] - 12;
+        }
     }
     else if (p == LeftMidpoint) {
         x1_left = circle_detect_msg[0][circleTag[0]*5] + 5; //左上角x坐标
@@ -504,15 +725,6 @@ std::vector<double> uavControl::detectCirclePosion(SelectPoint p, int *circleTag
     cv::Point2f left(x1_left , y1_left);
     cv::Point2f right(x1_right, y1_right);
     cv::Point3f circlePostionCamera = uv2xyz(left, right); //相机坐标系下圈的位姿
-    // // 颜色
-    // cv::Scalar color(255, 0, 0); // 蓝色 (BGR颜色)
-    // // 画一个点
-    // cv::circle(image_left, left, 2, color, -1); // 5表示点的半径，-1表示填充点
-    // cv::circle(image_right, right, 2, color, -1); // 5表示点的半径，-1表示填充点
-    // // 显示图像
-    // cv::imshow("result_left", image_left);
-    // cv::imshow("result_right", image_right);
-    // cv::waitKey(1);
     circleDetectMsg.push_back(x1_left);
     circleDetectMsg.push_back(y1_left);
     circleDetectMsg.push_back(circlePostionCamera.x);
@@ -524,7 +736,7 @@ std::vector<double> uavControl::detectCirclePosion(SelectPoint p, int *circleTag
         return circleDetectMsg;
     }
     else {
-        ROS_ERROR("too far!!!");
+        // ROS_ERROR("too far!!!");
         std::vector<double> zero(5,0);
         return zero;
     }

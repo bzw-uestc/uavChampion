@@ -36,7 +36,7 @@
 // #define DEBUGE1
 #define ObstacleCircleRadius 0.75
 #define ObstacleCircleNum    17
-#define ODOM_INIT_TIME 3
+#define ODOM_INIT_TIME 2
 #define PD_DELAY_TIME  0
 
 #define MAX_VEL_FAST 7.0
@@ -44,7 +44,7 @@
 #define MAX_VEL_SLOW 2.0
 #define MAX_VEL_SLOW_SLOW 1.8
         
-#define MAX_ACC_FAST 10
+#define MAX_ACC_FAST 15
 #define MAX_ACC_NORMAL 10
 
 typedef struct {
@@ -79,15 +79,34 @@ private:
     int circle_type = 1; //圈的种类 1为红圈 0为黄圈
     
     
-    bool reset_flag = 0;
-    bool odom_init_flag = 0;
-    bool visual_detect_flag = 0;
-    bool pd_delay_flag = 0;
-    bool aim_flag = 0;
+    bool reset_flag = false;
+    bool odom_init_flag = false;
+    bool ego_init_flag = false;
+    bool visual_detect_flag = false;
+    bool pd_delay_flag = false;
+    bool aim_flag = false;
     bool circle4_flag = false;
     bool circle12_flag = false;
     bool circle13_flag = false;
     bool circle15_flag = false;
+    bool circle16_obs_flag = false;  //观测确定对位点的flag
+    bool circle16_arrive_flag = false;  //到达对位点的flag
+    bool circle16_aim_flag = false;  //冲向动态圈的flag
+    bool circle16_clash_flag = false;  //冲向动态圈的flag
+    int  circle16_clash_rotation = 0;     //最高点的方向 -1为在无人机左边 1为在无人机右边
+    cv::Point3f circle16_aim_point;
+    cv::Point3f circle16_clash_point;  //冲向动态圈的目标点
+    int circle16_rotation_flag = false;       //用参考位姿算出来圈的旋转方向 -1为向左摆  1为向右摆
+    double circle16_camera_y_max = -10;
+    double circle16_camera_x_max = -10;
+    double circle16_camera_x_min = 10;
+    double circle16_arrive_time = 0;
+    double circle16_yaw = 0.0;
+    double circle16_min_z = 10.0;
+    double circle16_world_y_sum = 0;
+    double circle16_world_y_avr = 0;
+    int circle16_world_y_cnt = 0;
+    cv::Point3f circle16_ref_last;
     // std::unordered_map<int,geometry_msgs::PoseStamped> mid_point_map;
     // std::unordered_map<int,int> mid_point_map;
     bool mid_point_flag = false;
