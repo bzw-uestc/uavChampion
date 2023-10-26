@@ -182,12 +182,12 @@ void uavControl::uavControlTask(void) {
                                 // ROS_ERROR("circlePositionWorld.y:%f;visual_pose.pose.pose.position.y:%f",circlePositionWorld.y,visual_pose.pose.pose.position.y);
                             }
                         }
-                        if(circle16_dt > 9) {  //
+                        if(circle16_dt > 8) {  //
                             circle16_aim_flag = true;
                         }
                     
                         ROS_ERROR("circle16_clash_rotation:%d,circle_rotation_true:%d",circle16_clash_rotation,circle16_rotation_flag);
-                        if(circle16_dt > 15 && circle16_ref_cruuent.z - circle16_min_z < 0.4 && circle16_rotation_flag == circle16_clash_rotation) {  //
+                        if(circle16_dt > 12 && circle16_ref_cruuent.z - circle16_min_z < 0.4 && circle16_rotation_flag == circle16_clash_rotation) {  //
                             circle16_clash_flag = true;
                             // if(circle16_clash_rotation == 1) { //冲右上点
                             //     circle16_clash_point.y -= 1;
