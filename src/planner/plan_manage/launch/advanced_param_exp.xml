@@ -92,7 +92,7 @@
     <param name="grid_map/local_update_range_x"  value="10.0" /> 
     <param name="grid_map/local_update_range_y"  value="10.0" /> 
     <param name="grid_map/local_update_range_z"  value="8.0" /> 
-    <param name="grid_map/obstacles_inflation"     value="0.06" /> 
+    <param name="grid_map/obstacles_inflation"     value="0.07" /> 
     <param name="grid_map/local_map_margin" value="10"/>
     <param name="grid_map/ground_height"        value="-0.01"/>
     <!-- camera parameter -->
@@ -134,7 +134,7 @@
 
   <!-- trajectory optimization -->
     <param name="optimization/lambda_smooth" value="1.0" type="double"/>
-    <param name="optimization/lambda_collision" value="0.5" type="double"/>
+    <param name="optimization/lambda_collision" value="4.0" type="double"/>
     <param name="optimization/lambda_feasibility" value="0.1" type="double"/>
     <param name="optimization/lambda_fitness" value="1.0" type="double"/>
     <param name="optimization/dist0" value="0.5" type="double"/>

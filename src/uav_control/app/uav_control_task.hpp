@@ -39,12 +39,12 @@
 #define ODOM_INIT_TIME 2
 #define PD_DELAY_TIME  0
 
-#define MAX_VEL_FAST 7.0
+#define MAX_VEL_FAST 5.0
 #define MAX_VEL_MID 3.0
-#define MAX_VEL_SLOW 2.0
+#define MAX_VEL_SLOW 2.2
 #define MAX_VEL_SLOW_SLOW 1.8
         
-#define MAX_ACC_FAST 15
+#define MAX_ACC_FAST 10
 #define MAX_ACC_NORMAL 10
 
 typedef struct {
@@ -90,6 +90,7 @@ private:
     bool circle12_flag = false;
     bool circle13_flag = false;
     bool circle15_flag = false;
+    bool circle15_flag2 = false;
     bool circle16_obs_flag = false;  //观测确定对位点的flag
     bool circle16_arrive_flag = false;  //到达对位点的flag
     bool circle16_aim_flag = false;  //冲向动态圈的flag
