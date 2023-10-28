@@ -22,6 +22,15 @@ namespace ego_planner
     nh.param("optimization/order", order_, 3);
   }
 
+  void BsplineOptimizer::setLamda2(double lamda2)
+  {
+    lambda2_ = lamda2;
+  }
+
+  double BsplineOptimizer::getLamda2(void){
+    return lambda2_;
+  }
+
   void BsplineOptimizer::setMaxVel(const float max_vel) {
     this->max_vel_ = max_vel;
     // ROS_ERROR("ego_max_vel:%f",this->max_vel_);

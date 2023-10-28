@@ -253,10 +253,12 @@ namespace ego_planner
 
   void EGOReplanFSM::BroadcastMaxVelCallback(const std_msgs::Float64 &msg) {
     planner_manager_->setMaxVel(msg.data);
+    planner_manager_->setbsplineOptimizer();
   }
 
   void EGOReplanFSM::BroadcastMaxAccCallback(const std_msgs::Float64 &msg) {
     planner_manager_->setMaxAcc(msg.data);
+
   }
 
   void EGOReplanFSM::BroadcastBsplineCallback(const traj_utils::BsplinePtr &msg)

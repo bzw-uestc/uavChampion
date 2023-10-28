@@ -29,6 +29,7 @@
 #include <Eigen/Geometry>
 #include <tf/transform_listener.h>
 #include "std_msgs/Float64.h"
+#include "../math/kalman_filter.hpp"
 
 // #define TF_DEBUG
 #define PD_DEBUGE
@@ -39,12 +40,14 @@
 #define ODOM_INIT_TIME 2
 #define PD_DELAY_TIME  0
 
-#define MAX_VEL_FAST 5.0
-#define MAX_VEL_MID 3.0
-#define MAX_VEL_SLOW 2.2
+#define MAX_VEL_FAST_FAST 10.0
+#define MAX_VEL_FAST 7.0
+#define MAX_VEL_MID 4.0
+#define MAX_VEL_SLOW 2.5
 #define MAX_VEL_SLOW_SLOW 1.8
-        
-#define MAX_ACC_FAST 10
+
+#define MAX_ACC_FAST_FAST 20     
+#define MAX_ACC_FAST 15
 #define MAX_ACC_NORMAL 10
 
 typedef struct {
@@ -84,9 +87,11 @@ private:
     bool odom_init_flag = false;
     bool ego_init_flag = false;
     bool visual_detect_flag = false;
+    bool kal_init_flag = false;
     bool pd_delay_flag = false;
     bool aim_flag = false;
     bool circle4_flag = false;
+    bool circle4_flag2 = false;
     bool circle12_flag = false;
     bool circle13_flag = false;
     bool circle15_flag = false;

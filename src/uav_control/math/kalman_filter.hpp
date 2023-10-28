@@ -10,10 +10,12 @@ private:
     double Q;
     double R;
 public:
-    kalmanFilter(double initial_position, double initial_Q, double initial_R) {
-        x_hat = initial_position;
+    kalmanFilter(double initial_Q, double initial_R) {
         Q = initial_Q;
         R = initial_R;
+    }
+    void kalmanSetInit(double initial_position) {
+        x_hat = initial_position;
     }
     double update(double z) {
         // 预测步骤

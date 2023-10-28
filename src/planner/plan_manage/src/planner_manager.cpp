@@ -51,8 +51,25 @@ namespace ego_planner
   void EGOPlannerManager::setMaxAcc(const float max_acc) {
     // bspline_optimizer_->setMaxVel(max_vel);
     pp_.max_acc_ = max_acc; 
-    // ROS_ERROR("ego_max_vel%f,ego_max_acc:%f",pp_.max_vel_,pp_.max_acc_);
+    ROS_ERROR("ego_max_vel%f,ego_max_acc:%f",pp_.max_vel_,pp_.max_acc_);
   }
+
+
+  void EGOPlannerManager::setbsplineOptimizer(void) {
+    if (pp_.max_vel_ > 9.0)
+    {
+      bspline_optimizer_->setLamda2(4.0);
+    }
+    else if(pp_.max_vel_ > 5.0) {
+      bspline_optimizer_->setLamda2(1.0);
+    }
+    else if(pp_.max_vel_ < 5.0){
+      bspline_optimizer_->setLamda2(0.5);
+    }
+   
+    // ROS_ERROR("lamda2:%f",bspline_optimizer_->getLamda2());
+  }
+
 
   // SECTION rebond replanning
 

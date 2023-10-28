@@ -39,6 +39,7 @@ namespace ego_planner
     void initPlanModules(ros::NodeHandle &nh, PlanningVisualization::Ptr vis = NULL);
     void setMaxVel(const float max_vel);
     void setMaxAcc(const float max_acc);
+    void setbsplineOptimizer(void);
     void deliverTrajToOptimizer(void) { bspline_optimizer_->setSwarmTrajs(&swarm_trajs_buf_); };
 
     void setDroneIdtoOpt(void) { bspline_optimizer_->setDroneId(pp_.drone_id); }

@@ -36,7 +36,7 @@ public:
     double reached_yaw_degrees;
 
     PIDParams()
-        : kp_x(1.3), kp_y(1.3), kp_z(2.5), kp_yaw(0.5), kd_x(0.5), kd_y(0.5), kd_z(0.5), kd_yaw(0.2), reached_thresh_xyz(0.5), reached_yaw_degrees(0.5)
+        : kp_x(1.1), kp_y(1.1), kp_z(3.0), kp_yaw(0.5), kd_x(0.5), kd_y(0.5), kd_z(0.5), kd_yaw(0.2), reached_thresh_xyz(0.5), reached_yaw_degrees(0.5)
     {
     }
 
