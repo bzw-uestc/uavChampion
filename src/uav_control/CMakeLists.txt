@@ -159,8 +159,8 @@ link_directories(${tensorRT_DIR}/lib)
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_node src/rosNodeMain.cpp app/msg_process_task.cpp app/uav_control_task.cpp 
-app/circleDetect.cpp)
+add_executable(${PROJECT_NAME}_node src/rosNodeMain.cpp app/circle_travel_task.cpp app/yoloV5.cpp 
+app/circle_detection.cpp app/airsim_interface.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

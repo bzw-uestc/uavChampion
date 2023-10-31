@@ -1,4 +1,4 @@
-#include "circleDetect.hpp"
+#include "yoloV5.hpp"
 
 float Yolo::letterbox(
     const cv::Mat& image,
@@ -162,7 +162,9 @@ cv::Point Yolo::getCenterPoint(cv::Rect rect){
   return cpt;
 }
 
-Yolo::Yolo(char* model_path) {
+Yolo::Yolo() {}
+
+void Yolo::loadModel(char* model_path) {
   std::cout << model_path << std::endl;
   ifstream ifile(model_path, ios::in | ios::binary);
   if (!ifile) {
@@ -251,7 +253,6 @@ Yolo::Yolo(char* model_path) {
     std::abort();
   }
 }
-
 void Yolo::Infer(
     int aWidth,
     int aHeight,

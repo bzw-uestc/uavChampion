@@ -1,4 +1,4 @@
-#include "Deep.hpp"
+#include "deep.hpp"
 #include <assert.h>
 #include <ros/ros.h>
 

@@ -1,5 +1,5 @@
-#ifndef _CIRCLEDETECT_H
-#define _CIRCLEDETECT_H
+#ifndef _YOLOV5_H
+#define _YOLOV5_H
 
 #include <ros/ros.h>
 #include <opencv2/opencv.hpp>
@@ -50,7 +50,8 @@ class Logger : public ILogger {
 
 class Yolo {
  public:
-  Yolo(char* model_path);
+  Yolo();
+  void loadModel(char* model_path);
   std::vector<std::vector<float>>  detect(const cv::Mat *img);
   cv::Point getCenterPoint(cv::Rect rect);
   float letterbox(
