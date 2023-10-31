@@ -13,8 +13,9 @@ circleDetection::circleDetection(ros::NodeHandle &nh){
 
 std::vector<circleMsg> circleDetection::circleDetectionNewFrame(const cv::Mat* img_detect,float threshold_min, float threshold_max) {
     std::vector<circleMsg> circle_msg_return;
+    yolo_detect_result_.clear();
     yolo_detect_result_ = yolo_detect_.detect(img_detect); //先用yolo检测器检测当前帧
-    if(!yolo_detect_result_.empty()) {
+    if(!yolo_detect_result_.empty() && yolo_detect_result_[0].size() == yolo_detect_result_[1].size()) {
         for(int i = 0; i < yolo_detect_result_[0].size()/5; i++) { //遍历左目的每一个识别框
             // ROS_ERROR("yolo:x:%f,y:%f,width:%f,height:%f,type:%f",yolo_detect_result_[0][0],yolo_detect_result_[0][1],
             // yolo_detect_result_[0][2],yolo_detect_result_[0][3],yolo_detect_result_[0][4]);
@@ -26,9 +27,10 @@ std::vector<circleMsg> circleDetection::circleDetectionNewFrame(const cv::Mat* i
             std::vector<float> detect_msg_left,detect_msg_right;
             int start = i * 5,end = start + 4;
             // 复制数据到 detect_msg
-            detect_msg_left.insert(detect_msg_left.end(), yolo_detect_result_[0].begin() + start, yolo_detect_result_[0].begin() + end + 1);
-            detect_msg_right.insert(detect_msg_right.end(), yolo_detect_result_[1].begin() + start, yolo_detect_result_[1].begin() + end + 1);
-
+            for(int j = 0; j < 5; j++) {
+                detect_msg_left.push_back(yolo_detect_result_[0][i*5+j]);
+                detect_msg_right.push_back(yolo_detect_result_[1][i*5+j]);
+            }
             if(circle_width > threshold_min && circle_width < threshold_max) { //
                 std::vector<double> up_point = detectCirclePosion(upperMidpoint,detect_msg_left,detect_msg_right);
                 std::vector<double> down_point = detectCirclePosion(downMidpoint,detect_msg_left,detect_msg_right);
@@ -39,6 +41,16 @@ std::vector<circleMsg> circleDetection::circleDetectionNewFrame(const cv::Mat* i
                 cv::Point2f(left_point[0],left_point[1]), cv::Point2f(right_point[0],right_point[1])}; //图像的像素点坐标 pnp用
                 
                 if (up_point[2] != 0 && down_point[2] != 0 && left_point[2] != 0 && right_point[2] != 0) {
+                    // cv::Scalar color(255, 0, 0); // 蓝色 (BGR颜色)
+                    // // 画一个点
+                    // cv::circle(img_detect[0], circle_image_points[0], 2, color, -1); // 5表示点的半径，-1表示填充点
+                    // cv::circle(img_detect[0], circle_image_points[1], 2, color, -1); // 5表示点的半径，-1表示填充点
+                    // cv::circle(img_detect[0], circle_image_points[2], 2, color, -1); // 5表示点的半径，-1表示填充点
+                    // cv::circle(img_detect[0], circle_image_points[3], 2, color, -1); // 5表示点的半径，-1表示填充点
+                    // // 显示图像
+                    // cv::imshow("result_left", img_detect[0]);
+                    // // cv::imshow("result_right", image_right);
+                    // cv::waitKey(1);
                     cv::Point3f circle_position_camera; 
                     circle_position_camera.x = (up_point[2] + down_point[2] + left_point[2] + right_point[2]) / 4;
                     circle_position_camera.y = (up_point[3] + down_point[3] + left_point[3] + right_point[3]) / 4;
@@ -52,13 +64,12 @@ std::vector<circleMsg> circleDetection::circleDetectionNewFrame(const cv::Mat* i
                         circle_detect_msg.ratio = circle_ratio;
                         circle_detect_msg.type = circle_type;
                         circle_msg_return.push_back(circle_detect_msg);
-                        ROS_ERROR("camera x:%f,y:%f,z:%f",circle_detect_msg.pos.x,circle_detect_msg.pos.y,circle_detect_msg.pos.z);
+                        // ROS_ERROR("camera x:%f,y:%f,z:%f",circle_detect_msg.pos.x,circle_detect_msg.pos.y,circle_detect_msg.pos.z);
                     }
                 }
             }
         }
     }
-    
     return circle_msg_return;
 }
 

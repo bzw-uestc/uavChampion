@@ -5,11 +5,18 @@ airsimInterface::airsimInterface(ros::NodeHandle &nh) {
     circle_poses_true_sub_ = nh.subscribe("/airsim_node/drone_1/debug/circle_poses_gt", 10, &airsimInterface::circlePosesTrueCallBack,this); //仿真器输出的障碍圈真实位姿
     drone_true_odom_sub_ = nh.subscribe("/airsim_node/drone_1/debug/pose_gt",1,&airsimInterface::dronePosesTrueCallBack,this);
     sim_reset_client_ = nh.serviceClient<airsim_ros::Reset>("/airsim_node/reset");
+    sim_takeoff_client_ = nh.serviceClient<airsim_ros::Takeoff>("/airsim_node/drone_1/takeoff");
     set_goal_position_client_ = nh.serviceClient<airsim_ros::SetLocalPosition>("/airsim_node/local_position_goal/override");
 }
 
 bool airsimInterface::airsimReset(void) {
     sim_reset_client_.call(sim_reset_);
+    return true;
+}
+
+bool airsimInterface::airsimTakeoff(void) {
+    sim_takeoff_.request.waitOnLastTask = 1;
+    sim_takeoff_client_.call(sim_takeoff_);
     return true;
 }
 

@@ -19,8 +19,9 @@ class airsimInterface{
 private:
     airsim_ros::SetLocalPosition posCmd_;
     airsim_ros::Reset  sim_reset_;
+    airsim_ros::Takeoff sim_takeoff_;
     airsim_ros::SetLocalPosition pos_cmd_client_;
-    ros::ServiceClient set_goal_position_client_,sim_reset_client_;
+    ros::ServiceClient set_goal_position_client_,sim_reset_client_,sim_takeoff_client_;
     airsim_ros::TreePosesConstPtr tree_poses_true_; //树的位置真值 只能debug用
     geometry_msgs::PoseStampedConstPtr drone_poses_true_; //仿真器无人机真实位姿
     airsim_ros::CirclePosesConstPtr circle_poses_ref_;   //障碍圈位姿参考值
@@ -36,6 +37,7 @@ public:
     airsimInterface(ros::NodeHandle &nh);
     ~airsimInterface(){}
     bool airsimReset(void);
+    bool airsimTakeoff(void);
     void airsimSetGoalPosition(const double x,const double y,const double z,const double yaw);
     std::vector<circleMsg> airsimGetCirclePosRef(void);
     std::vector<circleMsg> airsimGetCirclePosTrue(void);

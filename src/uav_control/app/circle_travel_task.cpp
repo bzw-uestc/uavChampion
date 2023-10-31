@@ -16,8 +16,10 @@ void circleTravelTask::circleTravelMain(void) {
             circle_msg_ref_ = airsim_interface_.airsimGetCirclePosRef(); //获取障碍圈参考位姿
             circle_msg_true_ = airsim_interface_.airsimGetCirclePosTrue(); //获取障碍圈真实位姿
             circle_msg_world_.assign(circle_msg_ref_.begin(), circle_msg_ref_.end()); //将参考位姿拷贝 用以后续对比
+            airsim_interface_.airsimTakeoff(); //无人机起飞
             std::queue<std::pair<std_msgs::Header,std::vector<cv::Mat>>> queue_empty; //清空队列用
             std::swap(img_detect_buf_,queue_empty); //清空初始化时产生的历史图像
+            
         }
     }
     else { //main
@@ -39,9 +41,13 @@ circleTravelTask::circleTravelTask(ros::NodeHandle &nh): circle_detection_(nh),a
 
 void circleTravelTask::droneFdbUpdate(void) {
     //odom update
+    // ROS_ERROR("circle, x:%f,y:%f,z:%f",circle_msg_true_[circle_num_].pos.x,circle_msg_true_[circle_num_].pos.y,circle_msg_true_[circle_num_].pos.z);
+    // ROS_ERROR("ego,x:%f,y:%f,z:%f",drone_target_pose_.pose.position.x,drone_target_pose_.pose.position.y,drone_target_pose_.pose.position.z);
+    // ROS_ERROR("drone, x:%f,y:%f,z:%f",drone_odom_.pose.pose.position.x,drone_odom_.pose.pose.position.y,drone_odom_.pose.pose.position.z);
     drone_odom_.pose.pose.position.x = visual_odom_.pose.pose.position.x;
     drone_odom_.pose.pose.position.y = -visual_odom_.pose.pose.position.y;
     drone_odom_.pose.pose.position.z = -visual_odom_.pose.pose.position.z;
+    drone_odom_.pose.pose.orientation = visual_odom_.pose.pose.orientation;
 }
 
 void circleTravelTask::circlePosionWorldUpdate(void) {
@@ -55,15 +61,15 @@ void circleTravelTask::circlePosionWorldUpdate(void) {
         img_detect[0] = img_detect_vector[0];
         img_detect[1] = img_detect_vector[1];
         img_detect_buf_.pop();
+        circle_msg_camera_.clear();
         circle_msg_camera_ = circle_detection_.circleDetectionNewFrame(img_detect,20,120); //20 120为检测阈值 
         sensor_msgs::ImagePtr detect_image_left = cv_bridge::CvImage(img_header, "bgr8", img_detect[0]).toImageMsg();
         detect_left_pub_.publish(detect_image_left); //发布检测到的图像
-
         if(!circle_msg_camera_.empty()) { //当前帧下检测到障碍圈
             for(int i = 0; i < circle_msg_camera_.size(); i++) {
                 /*获取视觉里程计到世界坐标系的变换矩阵*/
-                Eigen::Quaterniond quaternion(visual_odom_.pose.pose.orientation.w, visual_odom_.pose.pose.orientation.x, visual_odom_.pose.pose.orientation.y, visual_odom_.pose.pose.orientation.z);
-                Eigen::Vector3d translation(visual_odom_.pose.pose.position.x, visual_odom_.pose.pose.position.y, visual_odom_.pose.pose.position.z);
+                Eigen::Quaterniond quaternion(drone_odom_.pose.pose.orientation.w, drone_odom_.pose.pose.orientation.x, drone_odom_.pose.pose.orientation.y, drone_odom_.pose.pose.orientation.z);
+                Eigen::Vector3d translation(drone_odom_.pose.pose.position.x,-drone_odom_.pose.pose.position.y,drone_odom_.pose.pose.position.z);
                 Eigen::Matrix4d Twb = Eigen::Matrix4d::Identity(); //IMU坐标系到世界坐标系的变换 实际上就是视觉里程计
                 Twb.block<3, 3>(0, 0) = quaternion.toRotationMatrix();
                 Twb.block<3, 1>(0, 3) = translation;
@@ -79,7 +85,7 @@ void circleTravelTask::circlePosionWorldUpdate(void) {
                 circle_position_world.width_max = circle_msg_camera_[i].width_max;
                 circle_position_world.ratio = circle_msg_camera_[i].ratio;
                 circle_position_world.type = circle_msg_camera_[i].type;
-                ROS_ERROR("world x:%f,y:%f,z:%f",circle_position_world.pos.x,circle_position_world.pos.y,circle_position_world.pos.z);
+                // ROS_ERROR("world x:%f,y:%f,z:%f",circle_position_world.pos.x,circle_position_world.pos.y,circle_position_world.pos.z);
                 if(circle_position_world.pos.z < 0.2) circle_position_world.pos.z = 0.2;
                 int closest_circle_num = findClosestCircleNum(circle_position_world); //找到最接近观测的障碍圈
                 if(closest_circle_num == -1) break;
@@ -90,7 +96,7 @@ void circleTravelTask::circlePosionWorldUpdate(void) {
                     else if(circle_msg_camera_[i].pos.z > 5.0) circle_msg_camera_[i].pos.z -= 3.0;
                     // 创建一个包含原始点坐标的齐次坐标向量
                     Eigen::Vector4d Pc_mid;
-                    Pc_mid << circle_msg_camera_[i].pos.z, circle_msg_camera_[i].pos.x, circle_msg_camera_[i].pos.y, 1.0;
+                    Pc_mid << circle_msg_camera_[i].pos.z, circle_msg_camera_[i].pos.x, -circle_msg_camera_[i].pos.y, 1.0;
                     Eigen::Vector4d Pw_mid = Twb * Pc_mid;
                     // 提取变换后的世界坐标系下的坐标
                     circleMsg circle_mid_position_world;
@@ -117,11 +123,9 @@ void circleTravelTask::droneStateUpdate(void){ //更新无人机状态 主要是
 
 void circleTravelTask::droneSetGoalPosion(void) { //设置无人机目标点
     //每一帧开始先判断无人机是否到达目标障碍圈
-    // ROS_ERROR("circle, x:%f,y:%f,z:%f",circle_msg_world_[circle_num_].pos.x,circle_msg_world_[circle_num_].pos.y,circle_msg_world_[circle_num_].pos.z);
-    // ROS_ERROR("ego,x:%f,y:%f,z:%f",drone_target_pose_.pose.position.x,drone_target_pose_.pose.position.y,drone_target_pose_.pose.position.z);
-    // ROS_ERROR("drone, x:%f,y:%f,z:%f",drone_odom_.pose.pose.position.x,drone_odom_.pose.pose.position.y,drone_odom_.pose.pose.position.z);
     if(droneReachedLocation(circle_msg_world_[circle_num_],drone_odom_,1.0)) {
         if(circle_num_ < 16) circle_num_++;
+        if(circle_num_ == 8) circle_num_ = 12; //跳过剩余黄圈
     }
     //更新目标点
     drone_target_pose_.pose.position.x = circle_msg_world_[circle_num_].pos.x;
@@ -153,11 +157,11 @@ void circleTravelTask::dronePosionPDControl(void) { //无人机位置PD控制
 
 int circleTravelTask::findClosestCircleNum(circleMsg circle_msg) {
     int closest_index = -1; // 初始化为无效值
-    double minx_distance = 3.0; // 初始化为大于3米的值
-    double miny_distance = 3.0;
-    double minz_distance = 3.0;
+    double minx_distance = 6.0; // 初始化为大于3米的值
+    double miny_distance = 6.0;
+    double minz_distance = 6.0;
 
-    for (int i = 0; i < circle_msg_ref_.size(); i++) {
+    for (int i = circle_num_; i < circle_msg_ref_.size(); i++) {
         double xDistance = std::abs(circle_msg_ref_[i].pos.x - circle_msg.pos.x);
         double yDistance = std::abs(circle_msg_ref_[i].pos.y - circle_msg.pos.y);
         double zDistance = std::abs(circle_msg_ref_[i].pos.z - circle_msg.pos.z);
