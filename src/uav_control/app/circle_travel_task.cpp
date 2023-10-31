@@ -25,7 +25,7 @@ void circleTravelTask::circleTravelMain(void) {
         circlePosionWorldUpdate(); //2.感知障碍圈，更新障碍圈的世界坐标
         droneStateUpdate(); //3.根据当前帧的目标障碍圈更新无人机的控制参数
         droneSetGoalPosion(); //4.更新无人机当前帧的目标点
-        // dronePosionPDControl(); //5.更新无人机PD控制器
+        dronePosionPDControl(); //5.更新无人机PD控制器
     }
 }
 
@@ -63,7 +63,7 @@ void circleTravelTask::circlePosionWorldUpdate(void) {
             for(int i = 0; i < circle_msg_camera_.size(); i++) {
                 /*获取视觉里程计到世界坐标系的变换矩阵*/
                 Eigen::Quaterniond quaternion(visual_odom_.pose.pose.orientation.w, visual_odom_.pose.pose.orientation.x, visual_odom_.pose.pose.orientation.y, visual_odom_.pose.pose.orientation.z);
-                Eigen::Vector3d translation(visual_odom_.pose.pose.position.x, visual_odom_.pose.pose.position.y, -visual_odom_.pose.pose.position.z);
+                Eigen::Vector3d translation(visual_odom_.pose.pose.position.x, visual_odom_.pose.pose.position.y, visual_odom_.pose.pose.position.z);
                 Eigen::Matrix4d Twb = Eigen::Matrix4d::Identity(); //IMU坐标系到世界坐标系的变换 实际上就是视觉里程计
                 Twb.block<3, 3>(0, 0) = quaternion.toRotationMatrix();
                 Twb.block<3, 1>(0, 3) = translation;
@@ -74,8 +74,12 @@ void circleTravelTask::circlePosionWorldUpdate(void) {
                 // 提取变换后的世界坐标系下的坐标
                 circleMsg circle_position_world;
                 circle_position_world.pos.x = Pw(0);
-                circle_position_world.pos.y = Pw(1);
+                circle_position_world.pos.y = -Pw(1);
                 circle_position_world.pos.z = Pw(2);
+                circle_position_world.width_max = circle_msg_camera_[i].width_max;
+                circle_position_world.ratio = circle_msg_camera_[i].ratio;
+                circle_position_world.type = circle_msg_camera_[i].type;
+                ROS_ERROR("world x:%f,y:%f,z:%f",circle_position_world.pos.x,circle_position_world.pos.y,circle_position_world.pos.z);
                 if(circle_position_world.pos.z < 0.2) circle_position_world.pos.z = 0.2;
                 int closest_circle_num = findClosestCircleNum(circle_position_world); //找到最接近观测的障碍圈
                 if(closest_circle_num == -1) break;
@@ -91,7 +95,7 @@ void circleTravelTask::circlePosionWorldUpdate(void) {
                     // 提取变换后的世界坐标系下的坐标
                     circleMsg circle_mid_position_world;
                     circle_mid_position_world.pos.x = Pw_mid(0);
-                    circle_mid_position_world.pos.y = Pw_mid(1);
+                    circle_mid_position_world.pos.y = -Pw_mid(1);
                     circle_mid_position_world.pos.z = Pw_mid(2);
                     circle_mid_position_world.width_max = circle_msg_camera_[i].width_max;
                     circle_mid_position_world.ratio = circle_msg_camera_[i].ratio;
