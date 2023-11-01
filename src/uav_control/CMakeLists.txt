@@ -126,7 +126,8 @@ catkin_package(
 ## Build ##
 ###########
 
-set(tensorRT_DIR ${PROJECT_SOURCE_DIR}/../../lib/TensorRT-8.6.1.6)
+set(tensorRT_DIR ${PROJECT_SOURCE_DIR}/../../lib/TensorRT-8.4.3.1)
+set(onnxruntime_DIR ${PROJECT_SOURCE_DIR}/../../lib/onnxruntime-linux-x64-gpu-1.16.1)
 
 message(--------------------------------------------------${tensorRT_DIR})
 set(CUDA_LIB ${CUDA_INCLUDE_DIRS}/../lib64)
@@ -139,12 +140,15 @@ include_directories(
   ${PROJECT_SOURCE_DIR}/include
   ${CUDA_INCLUDE_DIRS}
   ${tensorRT_DIR}/include
+  ${onnxruntime_DIR}/include
   include)
 
 #link_directories(${CUDA_LIB})
 link_directories(${CUDA_LIBRARY_DIRS})
 #tensorRT
 link_directories(${tensorRT_DIR}/lib)
+# onnx
+link_directories(${onnxruntime_DIR}/lib)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -159,7 +163,7 @@ link_directories(${tensorRT_DIR}/lib)
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_node src/rosNodeMain.cpp app/circle_travel_task.cpp app/yoloV5.cpp 
+add_executable(${PROJECT_NAME}_node src/rosNodeMain.cpp app/circle_travel_task.cpp app/yoloV5.cpp app/deep.cpp 
 app/circle_detection.cpp app/airsim_interface.cpp)
 
 ## Rename C++ executable without prefix
@@ -180,11 +184,12 @@ target_link_libraries(${PROJECT_NAME}_node
    ${CUDA_LIBRARIES}
    nvinfer
    nvinfer_plugin
+   onnxruntime
    #cudart
  )
-#  add_subdirectory("deep_image/StereoAlgorithms")
-#  set_target_properties(fastacvnet_plus_demo PROPERTIES ENABLE_EXPORTS ON)
-#  target_link_libraries(uav_control_node fastacvnet_plus_demo)
+ add_subdirectory("deep_image/StereoAlgorithms")
+ set_target_properties(HitNet_demo PROPERTIES ENABLE_EXPORTS ON)
+ target_link_libraries(uav_control_node HitNet_demo)
 #############
 ## Install ##
 #############

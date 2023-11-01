@@ -132,8 +132,8 @@ void circleTravelTask::droneSetGoalPosion(void) { //设置无人机目标点
     drone_target_pose_.pose.position.y = circle_msg_world_[circle_num_].pos.y;
     drone_target_pose_.pose.position.z = circle_msg_world_[circle_num_].pos.z;
     //以无人机里程计的姿态角作为目标点的姿态角
-    Eigen::Quaterniond quaternion(visual_odom_.pose.pose.orientation.w, visual_odom_.pose.pose.orientation.x, 
-    visual_odom_.pose.pose.orientation.y, visual_odom_.pose.pose.orientation.z);
+    Eigen::Quaterniond quaternion(drone_odom_.pose.pose.orientation.w, drone_odom_.pose.pose.orientation.x, 
+    drone_odom_.pose.pose.orientation.y, drone_odom_.pose.pose.orientation.z);
     
     drone_target_pose_.pose.orientation.w = quaternion.w();
     drone_target_pose_.pose.orientation.x = quaternion.x();

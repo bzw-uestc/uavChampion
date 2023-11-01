@@ -24,7 +24,8 @@
 #include "../app/yoloV5.hpp"
 #include "../app/circle_travel_task.hpp"
 #include "../math/kalman_filter.hpp"
-
+#include "../deep_image/StereoAlgorithms/HitNet/include/HitNetAlgorithm.h"
+// #include "../app/deep.hpp"
 // #include "../app/onnx2.hpp"
 // #include "../deep_image/StereoAlgorithms/FastACVNet_plus/include/FastACVNet_plus_Algorithm.h"
 // #include"FastACVNet_plus_Algorithm.h"
@@ -37,6 +38,7 @@ void insertDepth32f(cv::Mat& depth);
 cv::Mat disparity2depth(cv::Mat& disparity, float fx, float baseline);
 cv::Mat disparity2depth_float(cv::Mat& disparity, float fx, float baseline);
 cv::Mat heatmap(cv::Mat&disparity);
+cv::Mat getDepthFromHitNet(const cv::Mat& img_left, const cv::Mat& img_right, const double& fx, const float& baseline);
 
 std::queue<sensor_msgs::ImageConstPtr> img_buf0;
 std::queue<sensor_msgs::ImageConstPtr> img_buf1; //stereo_img
@@ -104,7 +106,9 @@ int main(int argc, char** argv)
           cv::cvtColor(ptr1->image, gray_image_right, cv::COLOR_BGR2GRAY);
 
           ///////////////////////////////////openCV SGBM///////////////////////////////////////////////////////
-          cv::Mat disparity = getDepthFromStereo(gray_image_left,gray_image_right,320.0,95);
+          // cv::Mat disparity = getDepthFromStereo(gray_image_left,gray_image_right,320.0,95);   //use opencv to get deep
+          cv::Mat disparity = getDepthFromHitNet(ptr0->image, ptr1->image, 320.0,95);             //use hitnet to get deep
+
           cv::Mat img_depth = disparity2depth(disparity,320.0,95.0);
           // cv::Mat img_depth32f = disparity2depth_float(disparity,320.0,95.0);
           sensor_msgs::ImagePtr rosDepthImage = cv_bridge::CvImage(std_msgs::Header(), "16UC1", img_depth).toImageMsg();
@@ -112,15 +116,15 @@ int main(int argc, char** argv)
           rosDepthImage->header.frame_id = "camera_depth";
           stereo_pub.publish(rosDepthImage);
 
-          //数据集的采集
+          // //数据集的采集
           // cnt_j++;
-          // if(cnt_j > 5) {
+          // if(cnt_j > 0) {
           //   cnt_j = 0;
           //   std::string name_left = "/home/uestc/bzw_ws/uavChampion/left/" + std::to_string(cnt_i) + ".jpg";
           //   std::string name_right = "/home/uestc/bzw_ws/uavChampion/right/" + std::to_string(cnt_i) + ".jpg";
           //   cnt_i++;
           //   cv::imwrite(name_left, ptr0->image);
-          //   // cv::imwrite(name_right, ptr1->image);
+          //   cv::imwrite(name_right, ptr1->image);
           // }
 
           auto end = std::chrono::system_clock::now();
@@ -306,6 +310,12 @@ cv::Mat getDepthFromStereo(const cv::Mat& img_left, const cv::Mat& img_right, co
   cv::Mat disparity;
   cudaDisparity.download(disparity);
   // insertDepth32f(disparity);
+  
+  //heat map
+  // cv::Mat Heap_map=heatmap(disparity);
+  // cv::imshow("heatmap0.jpg",Heap_map);
+  // cv::waitKey(1);
+
   return disparity;
 
   // cv::Mat depthMap16U = cv::Mat::zeros(img_left.size(), CV_16UC1); //深度图输出是CV_16UC1
@@ -315,6 +325,70 @@ cv::Mat getDepthFromStereo(const cv::Mat& img_left, const cv::Mat& img_right, co
   // // std::cout << end - start << std::endl;
   // return depthMap16U;
 }
+
+
+
+/// @brief hitnet by zhuohui
+char* stereo_calibration_path="/home/uestc/uavChampion/src/uav_control/deep_image/StereoAlgorithms/FastACVNet_plus/test/StereoCalibrationUAV.yml";
+char* strero_engine_path="/home/uestc/uavChampion/src/uav_control/deep_image/StereoAlgorithms/HitNet/test/model_float32.onnx";
+//init
+void * raft_stereo=Initialize(strero_engine_path,0,stereo_calibration_path);
+cv::Mat imageL=cv::imread("/home/uestc/uavChampion/src/uav_control/deep_image/StereoAlgorithms/HitNet/test/im0.jpg");
+cv::Mat imageR=cv::imread("/home/uestc/uavChampion/src/uav_control/deep_image/StereoAlgorithms/HitNet/test/im1.jpg");
+float*pointcloud=new float[imageL.cols*imageL.rows*6];
+// char* modelpath = "/home/uestc/mingwei/RAFT-Stereo/RAFT_Stereo.onnx";
+// Deep deep = Deep(modelpath);
+
+cv::Mat getDepthFromHitNet(const cv::Mat& img_left, const cv::Mat& img_right, const double& fx, const float& baseline) 
+{
+  cv::Mat disparity;
+  imageL = img_left;
+  imageR = img_right;
+
+  cv::Mat imageL1=imageL.clone();
+  cv::Mat imageR1=imageR.clone();
+  //auto start = std::chrono::system_clock::now();
+  RunHitNet(raft_stereo,imageL1,imageR1,pointcloud,disparity);
+
+
+  // float * deepimg = deep.det(imageL1, imageR1);
+  // cv::Mat imageMat(480, 640, CV_32FC3);
+  // memcpy(imageMat.data, deepimg, 640 * 480 * 1 * sizeof(float));
+  // cv::Mat Heap_map1=heatmap(imageMat);
+  // cv::imshow("Heap_map1.jpg",Heap_map1);
+  
+  
+  //auto end = std::chrono::system_clock::now();
+
+  //std::cout<<"time:"<<(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count())<<"ms"<<std::endl;
+  // cv::imshow("disparity.jpg",disparity);
+
+  //heat map
+  // cv::Mat Heap_map=heatmap(disparity);
+  // cv::imshow("heatmap1.jpg",Heap_map);
+  // cv::waitKey(1);
+
+
+  // std::fstream pointcloudtxt;
+  // pointcloudtxt.open("pointcloud.txt",std::ios::out);
+  // for (size_t i = 0; i < imageL.cols*imageL.rows*6; i+=6)
+  // {
+  //     pointcloudtxt<<pointcloud[i]<<" "<<pointcloud[i+1]<<" "<<pointcloud[i+2]<<" "
+  //     <<pointcloud[i+3]<<" "<<pointcloud[i+4]<<" "<<pointcloud[i+5]<<std::endl;
+  // }
+  // pointcloudtxt.close();
+  // Release(raft_stereo);
+  // delete []pointcloud;
+  // pointcloud=nullptr;
+  return disparity;
+}
+
+
+
+
+
+
+
 
 
 // cv::Mat getDepthFromStereo(const cv::Mat& img_left, const cv::Mat& img_right, const double& fx, const float& baseline)
