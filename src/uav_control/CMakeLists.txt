@@ -10,7 +10,7 @@ find_package(CUDA REQUIRED)
 message(--------------------------------------------------${OpenCV_INCLUDE_DIRS})
 message(--------------------------------------------------${CUDA_INCLUDE_DIRS})
 message(--------------------------------------------------${CUDA_LIBRARY_DIRS})
-find_package(PCL REQUIRED)
+# find_package(PCL REQUIRED)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -135,7 +135,7 @@ set(CUDA_LIB ${CUDA_INCLUDE_DIRS}/../lib64)
 include_directories(
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
+  # ${PCL_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}/include
   ${CUDA_INCLUDE_DIRS}
   ${tensorRT_DIR}/include
@@ -176,7 +176,7 @@ app/circle_detection.cpp app/airsim_interface.cpp)
 target_link_libraries(${PROJECT_NAME}_node
    ${catkin_LIBRARIES}
    ${OpenCV_LIBRARIES}
-   ${PCL_LIBRARIES}
+  #  ${PCL_LIBRARIES}
    ${CUDA_LIBRARIES}
    nvinfer
    nvinfer_plugin

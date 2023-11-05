@@ -15,6 +15,69 @@ std::vector<circleMsg> circleDetection::circleDetectionNewFrame(const cv::Mat* i
     std::vector<circleMsg> circle_msg_return;
     yolo_detect_result_.clear();
     yolo_detect_result_ = yolo_detect_.detect(img_detect); //先用yolo检测器检测当前帧
+    // if(!yolo_detect_result_.empty() && yolo_detect_result_[0].size() == yolo_detect_result_[1].size()) {
+    //     for(int i = 0; i < yolo_detect_result_[0].size()/5; i++) { //遍历左目的每一个识别框
+    //         // ROS_ERROR("yolo:x:%f,y:%f,width:%f,height:%f,type:%f",yolo_detect_result_[0][0],yolo_detect_result_[0][1],
+    //         // yolo_detect_result_[0][2],yolo_detect_result_[0][3],yolo_detect_result_[0][4]);
+    //         ////////////////////////////先计算识别框的信息 判断是否接近障碍圈/////////////////////////////////
+    //         double circle_square = yolo_detect_result_[0][i*5+2] * yolo_detect_result_[0][i*5+3]; //识别框面积
+    //         int circle_type = yolo_detect_result_[0][i*5+4]; //识别类型
+    //         double circle_width = std::max(yolo_detect_result_[0][i*5+2] , yolo_detect_result_[0][i*5+3]); //长宽的较大值
+    //         double circle_ratio = yolo_detect_result_[0][i*5+2] / yolo_detect_result_[0][i*5+3]; //计算障碍圈倾斜度
+    //         std::vector<float> detect_msg_left,detect_msg_right;
+    //         int start = i * 5,end = start + 4;
+    //         // 复制数据到 detect_msg
+    //         for(int j = 0; j < 5; j++) {
+    //             detect_msg_left.push_back(yolo_detect_result_[0][i*5+j]);
+    //             detect_msg_right.push_back(yolo_detect_result_[1][i*5+j]);
+    //         }
+    //         cv::Point2f circle_center;
+    //         circle_center.x = detect_msg_left[0] + 0.5*detect_msg_left[2]; //左下角x坐标+宽度的一半
+    //         circle_center.y = detect_msg_left[1] + 0.5*detect_msg_left[3]; //左下角x坐标+宽度的一半
+    //         // cv::Scalar color(255, 0, 0); // 蓝色 (BGR颜色)
+    //         // cv::circle(img_detect[0], circle_center, 2, color, -1); // 5表示点的半径，-1表示填充点
+    //         if(circle_width > threshold_min && circle_width < threshold_max) { //
+    //             std::vector<double> up_point = detectCirclePosion(upperMidpoint,detect_msg_left,detect_msg_right);
+    //             std::vector<double> down_point = detectCirclePosion(downMidpoint,detect_msg_left,detect_msg_right);
+    //             std::vector<double> left_point = detectCirclePosion(leftMidpoint,detect_msg_left,detect_msg_right);
+    //             std::vector<double> right_point = detectCirclePosion(rightMidpoint,detect_msg_left,detect_msg_right); //获取检测信息
+    //             std::vector<cv::Point2f> circle_image_points = 
+    //             {cv::Point2f(up_point[0],up_point[1]), cv::Point2f(down_point[0],down_point[1]), 
+    //             cv::Point2f(left_point[0],left_point[1]), cv::Point2f(right_point[0],right_point[1])}; //图像的像素点坐标 pnp用
+                
+    //             if (up_point[2] != 0 && down_point[2] != 0 && left_point[2] != 0 && right_point[2] != 0) {
+    //                 // cv::Scalar color(255, 0, 0); // 蓝色 (BGR颜色)
+    //                 // // 画一个点
+    //                 // cv::circle(img_detect[0], circle_image_points[0], 2, color, -1); // 5表示点的半径，-1表示填充点
+    //                 // cv::circle(img_detect[0], circle_image_points[1], 2, color, -1); // 5表示点的半径，-1表示填充点
+    //                 // cv::circle(img_detect[0], circle_image_points[2], 2, color, -1); // 5表示点的半径，-1表示填充点
+    //                 // cv::circle(img_detect[0], circle_image_points[3], 2, color, -1); // 5表示点的半径，-1表示填充点
+    //                 // // 显示图像
+    //                 // cv::imshow("result_left", img_detect[0]);
+    //                 // // cv::imshow("result_right", image_right);
+    //                 // cv::waitKey(1);
+
+    //                 cv::Point3f circle_position_camera; 
+    //                 circle_position_camera.x = (up_point[2] + down_point[2] + left_point[2] + right_point[2]) / 4;
+    //                 circle_position_camera.y = (up_point[3] + down_point[3] + left_point[3] + right_point[3]) / 4;
+    //                 circle_position_camera.z = (up_point[4] + down_point[4] + left_point[4] + right_point[4]) / 4;
+    //                 if(circle_position_camera.z > 4.0) { //太近的观测舍弃
+    //                     circleMsg circle_detect_msg;
+    //                     circle_detect_msg.pos.x = circle_position_camera.x;
+    //                     circle_detect_msg.pos.y = circle_position_camera.y;
+    //                     circle_detect_msg.pos.z = circle_position_camera.z;
+    //                     circle_detect_msg.width_max = circle_width;
+    //                     circle_detect_msg.ratio = circle_ratio;
+    //                     circle_detect_msg.type = circle_type;
+    //                     circle_detect_msg.center = circle_center;
+    //                     circle_detect_msg.square = circle_square;
+    //                     circle_msg_return.push_back(circle_detect_msg);
+    //                     // ROS_ERROR("camera x:%f,y:%f,z:%f",circle_detect_msg.pos.x,circle_detect_msg.pos.y,circle_detect_msg.pos.z);
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
     if(!yolo_detect_result_.empty() && yolo_detect_result_[0].size() == yolo_detect_result_[1].size()) {
         for(int i = 0; i < yolo_detect_result_[0].size()/5; i++) { //遍历左目的每一个识别框
             // ROS_ERROR("yolo:x:%f,y:%f,width:%f,height:%f,type:%f",yolo_detect_result_[0][0],yolo_detect_result_[0][1],
@@ -31,42 +94,23 @@ std::vector<circleMsg> circleDetection::circleDetectionNewFrame(const cv::Mat* i
                 detect_msg_left.push_back(yolo_detect_result_[0][i*5+j]);
                 detect_msg_right.push_back(yolo_detect_result_[1][i*5+j]);
             }
-            if(circle_width > threshold_min && circle_width < threshold_max) { //
-                std::vector<double> up_point = detectCirclePosion(upperMidpoint,detect_msg_left,detect_msg_right);
-                std::vector<double> down_point = detectCirclePosion(downMidpoint,detect_msg_left,detect_msg_right);
-                std::vector<double> left_point = detectCirclePosion(leftMidpoint,detect_msg_left,detect_msg_right);
-                std::vector<double> right_point = detectCirclePosion(rightMidpoint,detect_msg_left,detect_msg_right); //获取检测信息
-                std::vector<cv::Point2f> circle_image_points = 
-                {cv::Point2f(up_point[0],up_point[1]), cv::Point2f(down_point[0],down_point[1]), 
-                cv::Point2f(left_point[0],left_point[1]), cv::Point2f(right_point[0],right_point[1])}; //图像的像素点坐标 pnp用
-                
-                if (up_point[2] != 0 && down_point[2] != 0 && left_point[2] != 0 && right_point[2] != 0) {
-                    // cv::Scalar color(255, 0, 0); // 蓝色 (BGR颜色)
-                    // // 画一个点
-                    // cv::circle(img_detect[0], circle_image_points[0], 2, color, -1); // 5表示点的半径，-1表示填充点
-                    // cv::circle(img_detect[0], circle_image_points[1], 2, color, -1); // 5表示点的半径，-1表示填充点
-                    // cv::circle(img_detect[0], circle_image_points[2], 2, color, -1); // 5表示点的半径，-1表示填充点
-                    // cv::circle(img_detect[0], circle_image_points[3], 2, color, -1); // 5表示点的半径，-1表示填充点
-                    // // 显示图像
-                    // cv::imshow("result_left", img_detect[0]);
-                    // // cv::imshow("result_right", image_right);
-                    // cv::waitKey(1);
-                    cv::Point3f circle_position_camera; 
-                    circle_position_camera.x = (up_point[2] + down_point[2] + left_point[2] + right_point[2]) / 4;
-                    circle_position_camera.y = (up_point[3] + down_point[3] + left_point[3] + right_point[3]) / 4;
-                    circle_position_camera.z = (up_point[4] + down_point[4] + left_point[4] + right_point[4]) / 4;
-                    if(circle_position_camera.z > 4.0) { //太近的观测舍弃
-                        circleMsg circle_detect_msg;
-                        circle_detect_msg.pos.x = circle_position_camera.x;
-                        circle_detect_msg.pos.y = circle_position_camera.y;
-                        circle_detect_msg.pos.z = circle_position_camera.z;
-                        circle_detect_msg.width_max = circle_width;
-                        circle_detect_msg.ratio = circle_ratio;
-                        circle_detect_msg.type = circle_type;
-                        circle_msg_return.push_back(circle_detect_msg);
-                        // ROS_ERROR("camera x:%f,y:%f,z:%f",circle_detect_msg.pos.x,circle_detect_msg.pos.y,circle_detect_msg.pos.z);
-                    }
-                }
+            cv::Point2f circle_center;
+            circle_center.x = detect_msg_left[0] + 0.5*detect_msg_left[2]; //左下角x坐标+宽度的一半
+            circle_center.y = detect_msg_left[1] + 0.5*detect_msg_left[3]; //左下角x坐标+宽度的一半
+            // cv::Scalar color(255, 0, 0); // 蓝色 (BGR颜色)
+            // cv::circle(img_detect[0], circle_center, 2, color, -1); // 5表示点的半径，-1表示填充点
+            
+            if(circle_width > threshold_min && circle_width < threshold_max) { 
+                circleMsg circle_detect_msg;
+                circle_detect_msg.pos.x = 0;
+                circle_detect_msg.pos.y = 0;
+                circle_detect_msg.pos.z = 0;
+                circle_detect_msg.width_max = circle_width;
+                circle_detect_msg.ratio = circle_ratio;
+                circle_detect_msg.type = circle_type;
+                circle_detect_msg.center = circle_center;
+                circle_detect_msg.square = circle_square;
+                circle_msg_return.push_back(circle_detect_msg);
             }
         }
     }
@@ -79,25 +123,25 @@ std::vector<double> circleDetection::detectCirclePosion(selectPointEnum point,co
     // ORBPointsMathch(image_left,image_right,circle_detect_msg[0]);  //该方法先不用 等我回来调试
     int x1_left, y1_left, x1_right, y1_right;
     if (point == upperMidpoint) {
-        x1_left = left_msg[0] + 0.5*left_msg[2]; //左上角x坐标+宽度的一半
-        y1_left = left_msg[1] + 3; //左上角y坐标
+        x1_left = left_msg[0] + 0.5*left_msg[2]; //左下角x坐标+宽度的一半
+        y1_left = left_msg[1] + 3; //左下角y坐标
         x1_right = right_msg[0] + 0.5 *right_msg[2];
         y1_right = right_msg[1] + 3;
     }
     else if (point == downMidpoint) {
-        x1_left = left_msg[0] + 0.5 * left_msg[2]; //左上角x坐标+宽度的一半
+        x1_left = left_msg[0] + 0.5 * left_msg[2]; //左下角x坐标+宽度的一半
         y1_left = left_msg[1] + left_msg[3] - 3; //左下角y坐标
         x1_right = right_msg[0] + 0.5 * right_msg[2];
         y1_right = right_msg[1] + right_msg[3] - 3;
     }
     else if (point == leftMidpoint) {
-        x1_left = left_msg[0] + 3; //左上角x坐标
-        y1_left = left_msg[1] + 0.5 * left_msg[3]; //左上角y坐标 - 高度一半
+        x1_left = left_msg[0] + 3; //左下角x坐标
+        y1_left = left_msg[1] + 0.5 * left_msg[3]; //左下角y坐标 + 高度一半
         x1_right = right_msg[0] + 3;
         y1_right = right_msg[1] + 0.5 * right_msg[3] ;
     }
     else if (point == rightMidpoint) {
-        x1_left = left_msg[0] + left_msg[2] - 3; //左上角x坐标+宽度
+        x1_left = left_msg[0] + left_msg[2] - 3; //左下角x坐标+宽度
         y1_left = left_msg[1] + 0.5 * left_msg[3] ; 
         x1_right = right_msg[0] + right_msg[2] - 3;
         y1_right = right_msg[1] + 0.5 * right_msg[3];
@@ -213,7 +257,7 @@ cv::Point3f circleDetection::uv2xyz(cv::Point2f uvLeft, cv::Point2f uvRight)
 //************************************
 // Description: 根据ROI区域提取ORB特征并暴力匹配，返回多个匹配点对
 // Method:    ORBPointsMathch
-// Parameter: 左右目图像、ROI区域vector 左上角x坐标、左上角y坐标、宽度、高度、类名 
+// Parameter: 左右目图像、ROI区域vector 左下角x坐标、左下角y坐标、宽度、高度、类名 
 // Returns:   std::vector<cv::Point2f> 多对匹配点对
 //************************************
 std::vector<cv::Point2f> circleDetection::ORBPointsMathch(cv::Mat& image_left, cv::Mat& image_right, std::vector<float>& ROI) {

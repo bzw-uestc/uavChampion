@@ -27,9 +27,6 @@ private:
     airsim_ros::CirclePosesConstPtr circle_poses_ref_;   //障碍圈位姿参考值
     airsim_ros::CirclePosesConstPtr circle_poses_true_;  //障碍圈位姿真值 只能debug用
     ros::Subscriber drone_true_odom_sub_,circle_poses_ref_sub_,circle_poses_true_sub_; //仿真器发送的话题
-    bool done_poses_true_flag = false;
-    bool circle_poses_ref_flag = false;
-    bool circle_poses_true_flag = false;
     void dronePosesTrueCallBack(const geometry_msgs::PoseStampedConstPtr& drone_poses);
     void circlePosesRefCallBack(const airsim_ros::CirclePosesConstPtr& circle_pose);
     void circlePosesTrueCallBack(const airsim_ros::CirclePosesConstPtr& circle);

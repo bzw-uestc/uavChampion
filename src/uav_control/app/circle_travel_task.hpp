@@ -41,6 +41,10 @@
 #define MAX_ACC_FAST 15
 #define MAX_ACC_NORMAL 10
 
+#define CAMERA_FX 320
+#define CAMERA_FY 320
+#define CAMERA_CX 320
+#define CAMERA_CY 240
 class circleTravelTask{
 private:
     airsimInterface airsim_interface_;

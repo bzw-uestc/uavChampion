@@ -30,7 +30,7 @@ void airsimInterface::airsimSetGoalPosition(const double x,const double y,const 
 
 std::vector<circleMsg> airsimInterface::airsimGetCirclePosRef(void) {
     std::vector<circleMsg> circle_msg_ref;
-    if(circle_poses_ref_flag) {
+    if(!circle_poses_ref_->poses.empty()) {
         for(int i = 0; i < circle_poses_ref_->poses.size()-1; i++) {
             circleMsg circle_msg;
             circle_msg.pos.x = circle_poses_ref_->poses.at(i).position.x;
@@ -49,7 +49,7 @@ std::vector<circleMsg> airsimInterface::airsimGetCirclePosRef(void) {
 
 std::vector<circleMsg> airsimInterface::airsimGetCirclePosTrue(void) {
     std::vector<circleMsg> circle_msg_true;
-    if(circle_poses_true_flag) {
+    if(!circle_poses_true_->poses.empty()) {
         for(int i = 0; i < circle_poses_true_->poses.size()-1; i++) {
             circleMsg circle_msg;
             circle_msg.pos.x = circle_poses_true_->poses.at(i).position.x;
@@ -68,16 +68,12 @@ std::vector<circleMsg> airsimInterface::airsimGetCirclePosTrue(void) {
 
 void airsimInterface::dronePosesTrueCallBack(const geometry_msgs::PoseStampedConstPtr& drone_poses) {
     drone_poses_true_ = drone_poses;
-    done_poses_true_flag = true;
 }
 
 void airsimInterface::circlePosesRefCallBack(const airsim_ros::CirclePosesConstPtr& circle_pose) {
     circle_poses_ref_ = circle_pose;
-    circle_poses_ref_flag = true;
-    // ROS_ERROR("123");
 } 
 
 void airsimInterface::circlePosesTrueCallBack(const airsim_ros::CirclePosesConstPtr& circle_true) {
     circle_poses_true_ = circle_true;
-    circle_poses_true_flag = true;
 }
