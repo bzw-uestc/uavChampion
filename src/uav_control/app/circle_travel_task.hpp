@@ -22,20 +22,12 @@
 #include "../math/kalman_filter.hpp"
 #include "airsim_interface.hpp"
 
-// #define TF_DEBUG
-#define PD_DEBUGE
-// #define TRUE_POSE_DEBUGE
-// #define DEBUGE1
-#define ObstacleCircleRadius 0.75
-#define ObstacleCircleNum    17
 #define ODOM_INIT_TIME 2
-#define PD_DELAY_TIME  0
 
 #define MAX_VEL_FAST_FAST 10.0
 #define MAX_VEL_FAST 7.0
-#define MAX_VEL_MID 4.0
-#define MAX_VEL_SLOW 2.5
-#define MAX_VEL_SLOW_SLOW 1.8
+#define MAX_VEL_MID 5.0
+#define MAX_VEL_SLOW 2.0
 
 #define MAX_ACC_FAST_FAST 20     
 #define MAX_ACC_FAST 15
@@ -45,15 +37,17 @@
 #define CAMERA_FY 320
 #define CAMERA_CX 320
 #define CAMERA_CY 240
+
 class circleTravelTask{
 private:
     airsimInterface airsim_interface_;
-    ros::Publisher detect_left_pub_,ego_goal_point_pub_;
+    ros::Publisher detect_left_pub_,ego_goal_point_pub_,drone_max_vel_pub_,drone_max_acc_pub_;
     ros::Subscriber ego_pos_cmd_sub_,visual_odom_sub_;
-    std::vector<circleMsg> circle_msg_ref_;
-    std::vector<circleMsg> circle_msg_true_;
-    std::vector<circleMsg> circle_msg_camera_;
-    std::vector<circleMsg> circle_msg_world_;
+    std::vector<circleMsg> circle_msg_ref_; //圈的位姿参考值
+    std::vector<circleMsg> circle_msg_true_; //圈的位姿真值
+    std::vector<circleMsg> circle_msg_camera_; //目标检测中相机坐标系坐标
+    std::vector<circleMsg> circle_msg_world_; //目标检测中世界坐标系
+    std::map<int,cv::Point3f> mid_point_map_; //任务所需的中间点
     bool airsim_reset_flag_ = false;
     bool odom_init_flag_ = false;
     bool ego_init_flag_ = false;
@@ -69,9 +63,10 @@ private:
     void droneSetGoalPosion(void); //更新无人机的目标点
     void dronePosionPDControl(void); //无人机位置PD控制
     int findClosestCircleNum(circleMsg circle_msg); //找到最靠近观测的圈的序号
+    std::map<int,cv::Point3f> getMidPoint(void);
     void visualOdometryCallBack(const nav_msgs::Odometry& drone_vins_poses);
     void egoPosCmdCallBack(const quadrotor_msgs::PositionCommand& pos_cmds);
-    bool droneReachedLocation(circleMsg circle_taget,nav_msgs::Odometry fdb,double distance_dxyz);
+    bool droneReachedLocation(cv::Point3f circle_taget,nav_msgs::Odometry fdb,double distance_dxyz);
 public:
     circleTravelTask(ros::NodeHandle& nh);
     ~circleTravelTask(){}

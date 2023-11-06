@@ -1,0 +1,37 @@
+{
+    "configurations": [
+        {
+            "browse": {
+                "databaseFilename": "${default}",
+                "limitSymbolsToIncludedHeaders": false
+            },
+            "includePath": [
+                "/usr/include/",
+                "/usr/include/*",
+                "/usr/local/include/",
+                "/usr/local/cuda/include/",
+                "/home/uestc/TensorRT-8.4.3.1/include/",
+                "${workspaceFolder}/include/",
+                "${workspaceFolder}/RAFTStereo/**",
+                "${workspaceFolder}/RAFTStereo/include",
+                "${workspaceFolder}/RAFTStereo/src",
+                "${workspaceFolder}/HitNet/include",
+                "${workspaceFolder}/HitNet/src",
+                "${workspaceFolder}/common/*",
+                "${workspaceFolder}/CREStereo/include",
+                "${workspaceFolder}/CREStereo/src",
+                "${workspaceFolder}/FastACVNet_plus/include",
+                "${workspaceFolder}/FastACVNet_plus/src",
+                "${workspaceFolder}/include/*",
+                "${workspaceFolder}/include/Eigen",
+                "/usr/include/opencv4"
+            ],
+            "name": "ROS",
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}

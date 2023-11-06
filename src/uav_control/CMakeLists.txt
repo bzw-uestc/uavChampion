@@ -9,8 +9,7 @@ find_package(OpenCV 4.5.5 REQUIRED)
 find_package(CUDA REQUIRED)
 message(--------------------------------------------------${OpenCV_INCLUDE_DIRS})
 message(--------------------------------------------------${CUDA_INCLUDE_DIRS})
-message(--------------------------------------------------${CUDA_LIBRARY_DIRS})
-# find_package(PCL REQUIRED)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -126,10 +125,10 @@ catkin_package(
 ## Build ##
 ###########
 
-set(tensorRT_DIR ${PROJECT_SOURCE_DIR}/../../lib/TensorRT-8.6.1.6)
+set(tensorRT_DIR ${PROJECT_SOURCE_DIR}/../../lib/TensorRT-8.4.3.1)
+set(onnxruntime_DIR ${PROJECT_SOURCE_DIR}/../../lib/onnxruntime-linux-x64-gpu-1.16.1)
 
 message(--------------------------------------------------${tensorRT_DIR})
-set(CUDA_LIB ${CUDA_INCLUDE_DIRS}/../lib64)
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
@@ -139,12 +138,13 @@ include_directories(
   ${PROJECT_SOURCE_DIR}/include
   ${CUDA_INCLUDE_DIRS}
   ${tensorRT_DIR}/include
+  ${onnxruntime_DIR}/include
   include)
 
-#link_directories(${CUDA_LIB})
-link_directories(${CUDA_LIBRARY_DIRS})
 #tensorRT
 link_directories(${tensorRT_DIR}/lib)
+# onnx
+link_directories(${onnxruntime_DIR}/lib)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -159,7 +159,7 @@ link_directories(${tensorRT_DIR}/lib)
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_node src/rosNodeMain.cpp app/circle_travel_task.cpp app/yoloV5.cpp 
+add_executable(${PROJECT_NAME}_node src/rosNodeMain.cpp app/circle_travel_task.cpp app/yoloV5.cpp app/deep.cpp 
 app/circle_detection.cpp app/airsim_interface.cpp)
 
 ## Rename C++ executable without prefix
@@ -176,15 +176,16 @@ app/circle_detection.cpp app/airsim_interface.cpp)
 target_link_libraries(${PROJECT_NAME}_node
    ${catkin_LIBRARIES}
    ${OpenCV_LIBRARIES}
-  #  ${PCL_LIBRARIES}
    ${CUDA_LIBRARIES}
    nvinfer
    nvinfer_plugin
-   #cudart
+   onnxruntime
+   cudart
  )
-#  add_subdirectory("deep_image/StereoAlgorithms")
-#  set_target_properties(fastacvnet_plus_demo PROPERTIES ENABLE_EXPORTS ON)
-#  target_link_libraries(uav_control_node fastacvnet_plus_demo)
+
+add_subdirectory("deep_image/StereoAlgorithms")
+set_target_properties(HitNet PROPERTIES ENABLE_EXPORTS ON)
+target_link_libraries(uav_control_node HitNet)
 #############
 ## Install ##
 #############

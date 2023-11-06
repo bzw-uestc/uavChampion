@@ -1,0 +1,68 @@
+%YAML:1.0
+---
+intrinsic_left: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [ 320.0, 0., 320.0, 0.,320.0, 240.0, 0., 0., 1. ]
+distCoeffs_left: !!opencv-matrix
+   rows: 1
+   cols: 5
+   dt: d
+   data: [ 0.0, 0.0, 0.0, 0.0,0.0 ]
+intrinsic_right: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [ 320.0, 0., 320.0, 0.,320.0, 240.0, 0., 0., 1. ]
+distCoeffs_right: !!opencv-matrix
+   rows: 1
+   cols: 5
+   dt: d
+   data: [ 0.0, 0.0, 0.0, 0.0,0.0 ]
+R: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [ 1, 0, 0, 
+           0, 1, 0,
+           0, 0, 1 ]
+T: !!opencv-matrix
+   rows: 3
+   cols: 1
+   dt: d
+   data: [ -95.0, 0,0 ]
+R_L: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [ 1, 0, 0, 
+           0, 1, 0,
+           0, 0, 1 ]
+R_R: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [ 1, 0, 0, 
+           0, 1, 0,
+           0, 0, 1 ]
+P1: !!opencv-matrix
+   rows: 3
+   cols: 4
+   dt: d
+   data: [ 320.0, 0., 320.0, 0., 0., 320.0, 240.0, 0., 0. , 0., 1. , 0.]
+P2: !!opencv-matrix
+   rows: 3
+   cols: 4
+   dt: d
+   data: [ 320.0, 0., 320.0, 0., 0., 320.0, 240.0, 0., 0. , 0., 1. , 0.]
+Q: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [ 1., 0., 0., -320.0, 
+           0., 1., 0., -240.0, 
+           0., 0., 0.,  320.0, 
+           0., 0., 1.05263157894737e-02, 0. ]
+validROIL: [ 0, 0, 640, 480 ]
+validROIR: [ 0, 0, 640, 480 ]
