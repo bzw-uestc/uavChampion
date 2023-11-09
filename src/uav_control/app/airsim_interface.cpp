@@ -33,11 +33,11 @@ std::vector<circleMsg> airsimInterface::airsimGetCirclePosRef(void) {
     if(!circle_poses_ref_->poses.empty()) {
         for(int i = 0; i < circle_poses_ref_->poses.size()-1; i++) {
             circleMsg circle_msg;
-            circle_msg.pos.x = circle_poses_ref_->poses.at(i).position.x;
-            circle_msg.pos.y = -circle_poses_ref_->poses.at(i).position.y;
-            circle_msg.pos.z = abs(circle_poses_ref_->poses.at(i).position.z);
-            circle_msg.yaw = circle_poses_ref_->poses.at(i).yaw;
-
+            circle_msg.pos_world.x = circle_poses_ref_->poses.at(i).position.x;
+            circle_msg.pos_world.y = -circle_poses_ref_->poses.at(i).position.y;
+            circle_msg.pos_world.z = abs(circle_poses_ref_->poses.at(i).position.z);
+            circle_msg.yaw = -circle_poses_ref_->poses.at(i).yaw / 57.3;
+            circle_msg.ratio = 1.0;
             circle_msg_ref.push_back(circle_msg);
         }
         return circle_msg_ref;
@@ -52,9 +52,9 @@ std::vector<circleMsg> airsimInterface::airsimGetCirclePosTrue(void) {
     if(!circle_poses_true_->poses.empty()) {
         for(int i = 0; i < circle_poses_true_->poses.size()-1; i++) {
             circleMsg circle_msg;
-            circle_msg.pos.x = circle_poses_true_->poses.at(i).position.x;
-            circle_msg.pos.y = -circle_poses_true_->poses.at(i).position.y;
-            circle_msg.pos.z = abs(circle_poses_true_->poses.at(i).position.z);
+            circle_msg.pos_world.x = circle_poses_true_->poses.at(i).position.x;
+            circle_msg.pos_world.y = -circle_poses_true_->poses.at(i).position.y;
+            circle_msg.pos_world.z = abs(circle_poses_true_->poses.at(i).position.z);
             circle_msg.yaw = circle_poses_true_->poses.at(i).yaw;
 
             circle_msg_true.push_back(circle_msg);

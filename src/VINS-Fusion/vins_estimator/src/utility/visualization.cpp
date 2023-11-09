@@ -55,105 +55,131 @@ void registerPub(ros::NodeHandle &n)
 
 void pubLatestOdometry(const Eigen::Vector3d &P, const Eigen::Quaterniond &Q, const Eigen::Vector3d &V, Eigen::Vector3d &Av, double t)
 {
-    int mono_flag = 1;  //单目标志位 如果是双目则为0 单目则为1
-    if(mono_flag) {
-        nav_msgs::Odometry odometry, pd_odometry;
-        odometry.header.stamp = ros::Time(t);
-        odometry.header.frame_id = "world";
-        odometry.pose.pose.position.x = P.x();
-        odometry.pose.pose.position.y = P.y();
-        odometry.pose.pose.position.z = P.z();
+    nav_msgs::Odometry odometry;
+    odometry.header.stamp = ros::Time(t);
+    odometry.header.frame_id = "world";
+    odometry.pose.pose.position.x = P.x();
+    odometry.pose.pose.position.y = P.y();
+    odometry.pose.pose.position.z = P.z();
+    odometry.pose.pose.orientation.x = Q.x();
+    odometry.pose.pose.orientation.y = Q.y();
+    odometry.pose.pose.orientation.z = Q.z();
+    odometry.pose.pose.orientation.w = Q.w();
+    odometry.twist.twist.linear.x = V.x();
+    odometry.twist.twist.linear.y = V.y();
+    odometry.twist.twist.linear.z = V.z();
 
-        //vins中的里程計y軸和yaw軸是相反的 需要做座標系的轉換
-        nav_msgs::Odometry odometry_temp,odometry_temp1;
-        odometry_temp.pose.pose.orientation.x = Q.x();
-        odometry_temp.pose.pose.orientation.y = Q.y();
-        odometry_temp.pose.pose.orientation.z = Q.z();
-        odometry_temp.pose.pose.orientation.w = Q.w();
+    tf::Quaternion quat;
+    tf::quaternionMsgToTF(odometry.pose.pose.orientation, quat);
+    double roll, pitch, yaw;//定义存储r\p\y的容器
+    quat.normalize();
+    tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);//进行转换
+    roll = -(roll + CV_PI);
+    odometry.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw);//返回四元数
+    // ROS_ERROR("ANGLE:%f,%f,%f",roll,pitch,yaw);
+    pub_latest_odometry.publish(odometry);
+    // double positionX = odometry.pose.pose.position.x;
+    // double positionY = odometry.pose.pose.position.y;
+    // double positionZ = odometry.pose.pose.position.z;
 
-        odometry_temp1.pose.pose.orientation.x = Q.x();
-        odometry_temp1.pose.pose.orientation.y = Q.y();
-        odometry_temp1.pose.pose.orientation.z = Q.z();
-        odometry_temp1.pose.pose.orientation.w = Q.w();
+    // double orientationX = odometry.pose.pose.orientation.x;
+    // double orientationY = odometry.pose.pose.orientation.y;
+    // double orientationZ = odometry.pose.pose.orientation.z;
+    // double orientationW = odometry.pose.pose.orientation.w;
 
-        pd_odometry.header.frame_id = "world";
-        pd_odometry.header.stamp = ros::Time(t);
-        pd_odometry.pose.pose.position = odometry.pose.pose.position;
-        pd_odometry.pose.pose.position.y = -odometry.pose.pose.position.y;
-        pd_odometry.pose.pose.position.z = -odometry.pose.pose.position.z;
+    // double linearX = odometry.twist.twist.linear.x;
+    // double linearY = odometry.twist.twist.linear.y;
+    // double linearZ = odometry.twist.twist.linear.z;
 
-        tf::Quaternion quat;
-        tf::quaternionMsgToTF(odometry_temp.pose.pose.orientation, quat);
-        double roll, pitch, yaw;//定义存储r\p\y的容器
-        quat.normalize();
-        tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);//进行转换
-        roll = 0.0;
-        odometry_temp.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw);//返回四元数
-        tf::Quaternion quat_temp(odometry_temp.pose.pose.orientation.x,odometry_temp.pose.pose.orientation.y,odometry_temp.pose.pose.orientation.z, odometry_temp.pose.pose.orientation.w);
-        quat_temp.normalize();
-        odometry_temp.pose.pose.orientation.x = quat_temp.getX();
-        odometry_temp.pose.pose.orientation.y = quat_temp.getY();
-        odometry_temp.pose.pose.orientation.z = quat_temp.getZ();
-        odometry_temp.pose.pose.orientation.w = quat_temp.getW();
-        odometry.pose.pose.orientation = odometry_temp.pose.pose.orientation;
-        // ROS_ERROR("tf_eulerAngles:%f,%f,%f",roll,pitch,yaw);
-        // ROS_ERROR("tf_orientation:%f,%f,%f,%f",odometry_temp.pose.pose.orientation.w,odometry_temp.pose.pose.orientation.x,odometry_temp.pose.pose.orientation.y,odometry_temp.pose.pose.orientation.z);
-        roll = -roll;
-        pitch = -pitch;
-        yaw = -yaw;
-        odometry_temp.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw);//返回四元数
-        tf::Quaternion quat_temp2(odometry_temp.pose.pose.orientation.x,odometry_temp.pose.pose.orientation.y,odometry_temp.pose.pose.orientation.z, odometry_temp.pose.pose.orientation.w);
-        quat_temp2.normalize();
-        odometry_temp.pose.pose.orientation.x = quat_temp2.getX();
-        odometry_temp.pose.pose.orientation.y = quat_temp2.getY();
-        odometry_temp.pose.pose.orientation.z = quat_temp2.getZ();
-        odometry_temp.pose.pose.orientation.w = quat_temp2.getW();
-        pd_odometry.pose.pose.orientation = odometry_temp.pose.pose.orientation;
+    // Eigen::Matrix3d rotationMatrix;
+    // rotationMatrix << 1, 0, 0,
+    //                 0, -1, 0,
+    //                 0, 0, -1;
+    // Eigen::Vector3d position(positionX, positionY, positionZ);
+    // Eigen::Quaterniond orientation(orientationW, orientationX, orientationY, orientationZ);
+    
+    // position = rotationMatrix * position;
+    // orientation = rotationMatrix * orientation;
+    // Eigen::Vector3d linearVelocity(linearX, linearY, linearZ);
+    // linearVelocity = rotationMatrix * linearVelocity;
 
-        odometry.twist.twist.linear.x = V.x();
-        odometry.twist.twist.linear.y = V.y();
-        odometry.twist.twist.linear.z = V.z();
-        pd_odometry.twist.twist.linear = odometry.twist.twist.linear;
-        // odometry.twist.twist.angular.z = Av.z();
-        // odometry.twist.twist.angular.z = Av.z();
-        pub_latest_odometry.publish(odometry);
-        pub_latest_pd_odom.publish(pd_odometry);
-    }           
-    else {
-        nav_msgs::Odometry odometry;
-        odometry.header.stamp = ros::Time(t);
-        odometry.header.frame_id = "world";
-        odometry.pose.pose.position.x = P.x();
-        odometry.pose.pose.position.y = -P.y();
-        odometry.pose.pose.position.z = P.z();
-        nav_msgs::Odometry odometry_temp;
-        odometry_temp.pose.pose.orientation.x = Q.x();
-        odometry_temp.pose.pose.orientation.y = Q.y();
-        odometry_temp.pose.pose.orientation.z = Q.z();
-        odometry_temp.pose.pose.orientation.w = Q.w();
-        tf::Quaternion quat;
-        tf::quaternionMsgToTF(odometry_temp.pose.pose.orientation, quat);
-        double roll, pitch, yaw;//定义存储r\p\y的容器
-        tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);//进行转换
-        roll = roll + 3.14;
-        // if(roll > 3.14) {
-        //     roll -= 6.28;
-        // }
-        pitch = -pitch;
-        // ROS_ERROR("VINSO:%f,%f,%f", roll,pitch,yaw);
-        odometry_temp.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw);//返回四元数
-        odometry.pose.pose.orientation = odometry_temp.pose.pose.orientation;
-        // ROS_ERROR("VINS:%f,%f,%f, %f", odometry.pose.pose.orientation.w,odometry.pose.pose.orientation.x,odometry.pose.pose.orientation.y,odometry.pose.pose.orientation.z);
+    // odometry.pose.pose.position.x = position.x();
+    // odometry.pose.pose.position.y = position.y();
+    // odometry.pose.pose.position.z = position.z();
 
-        odometry.pose.pose.orientation.x = Q.x();
-        odometry.pose.pose.orientation.y = Q.y();
-        odometry.pose.pose.orientation.z = Q.z();
-        odometry.pose.pose.orientation.w = Q.w();
-        odometry.twist.twist.linear.x = V.x();
-        odometry.twist.twist.linear.y = -V.y();
-        odometry.twist.twist.linear.z = V.z();
-        pub_latest_odometry.publish(odometry);
-    }
+    // odometry.pose.pose.orientation.x = orientation.x();
+    // odometry.pose.pose.orientation.y = orientation.y();
+    // odometry.pose.pose.orientation.z = orientation.z();
+    // odometry.pose.pose.orientation.w = orientation.w();
+
+    // odometry.twist.twist.linear.x = linearVelocity.x();
+    // odometry.twist.twist.linear.y = linearVelocity.y();
+    // odometry.twist.twist.linear.z = linearVelocity.z();
+
+    
+    
+    // nav_msgs::Odometry odometry, pd_odometry;
+    // odometry.header.stamp = ros::Time(t);
+    // odometry.header.frame_id = "world";
+    // odometry.pose.pose.position.x = P.x();
+    // odometry.pose.pose.position.y = P.y();
+    // odometry.pose.pose.position.z = P.z();
+
+    // //vins中的里程計y軸和yaw軸是相反的 需要做座標系的轉換
+    // nav_msgs::Odometry odometry_temp,odometry_temp1;
+    // odometry_temp.pose.pose.orientation.x = Q.x();
+    // odometry_temp.pose.pose.orientation.y = Q.y();
+    // odometry_temp.pose.pose.orientation.z = Q.z();
+    // odometry_temp.pose.pose.orientation.w = Q.w();
+
+    // odometry_temp1.pose.pose.orientation.x = Q.x();
+    // odometry_temp1.pose.pose.orientation.y = Q.y();
+    // odometry_temp1.pose.pose.orientation.z = Q.z();
+    // odometry_temp1.pose.pose.orientation.w = Q.w();
+
+    // pd_odometry.header.frame_id = "world";
+    // pd_odometry.header.stamp = ros::Time(t);
+    // pd_odometry.pose.pose.position = odometry.pose.pose.position;
+    // pd_odometry.pose.pose.position.y = -odometry.pose.pose.position.y;
+    // pd_odometry.pose.pose.position.z = -odometry.pose.pose.position.z;
+
+    // tf::Quaternion quat;
+    // tf::quaternionMsgToTF(odometry_temp.pose.pose.orientation, quat);
+    // double roll, pitch, yaw;//定义存储r\p\y的容器
+    // quat.normalize();
+    // tf::Matrix3x3(quat).getRPY(roll, pitch, yaw);//进行转换
+
+    // roll = 0.0;
+    // odometry_temp.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw);//返回四元数
+    // tf::Quaternion quat_temp(odometry_temp.pose.pose.orientation.x,odometry_temp.pose.pose.orientation.y,odometry_temp.pose.pose.orientation.z, odometry_temp.pose.pose.orientation.w);
+    // quat_temp.normalize();
+    // odometry_temp.pose.pose.orientation.x = quat_temp.getX();
+    // odometry_temp.pose.pose.orientation.y = quat_temp.getY();
+    // odometry_temp.pose.pose.orientation.z = quat_temp.getZ();
+    // odometry_temp.pose.pose.orientation.w = quat_temp.getW();
+    // odometry.pose.pose.orientation = odometry_temp.pose.pose.orientation;
+    // // ROS_ERROR("tf_eulerAngles:%f,%f,%f",roll,pitch,yaw);
+    // // ROS_ERROR("tf_orientation:%f,%f,%f,%f",odometry_temp.pose.pose.orientation.w,odometry_temp.pose.pose.orientation.x,odometry_temp.pose.pose.orientation.y,odometry_temp.pose.pose.orientation.z);
+
+    // roll = -roll;
+    // pitch = -pitch;
+    // yaw = -yaw;
+    // odometry_temp.pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw);//返回四元数
+    // tf::Quaternion quat_temp2(odometry_temp.pose.pose.orientation.x,odometry_temp.pose.pose.orientation.y,odometry_temp.pose.pose.orientation.z, odometry_temp.pose.pose.orientation.w);
+    // quat_temp2.normalize();
+    // odometry_temp.pose.pose.orientation.x = quat_temp2.getX();
+    // odometry_temp.pose.pose.orientation.y = quat_temp2.getY();
+    // odometry_temp.pose.pose.orientation.z = quat_temp2.getZ();
+    // odometry_temp.pose.pose.orientation.w = quat_temp2.getW();
+    // pd_odometry.pose.pose.orientation = odometry_temp.pose.pose.orientation;
+
+    // odometry.twist.twist.linear.x = V.x();
+    // odometry.twist.twist.linear.y = V.y();
+    // odometry.twist.twist.linear.z = V.z();
+    // pd_odometry.twist.twist.linear = odometry.twist.twist.linear;
+    
+    // pub_latest_odometry.publish(odometry);
+    // pub_latest_pd_odom.publish(pd_odometry);
 }
 
 void pubTrackImage(const cv::Mat &imgTrack, const double t)

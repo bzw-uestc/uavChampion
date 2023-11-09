@@ -14,8 +14,9 @@
 
 
 typedef struct {
-    cv::Point3f pos;
-    cv::Point2f center;
+    cv::Point3f pos_camera;
+    cv::Point3f pos_world;
+    cv::Point2f camera_center;
     double yaw,ratio,width_max,square;
     int type;
 }circleMsg;

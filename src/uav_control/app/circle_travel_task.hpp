@@ -25,9 +25,14 @@
 #define ODOM_INIT_TIME 2
 
 #define MAX_VEL_FAST_FAST 10.0
-#define MAX_VEL_FAST 7.0
+#define MAX_VEL_FAST 10.0
 #define MAX_VEL_MID 5.0
-#define MAX_VEL_SLOW 2.0
+#define MAX_VEL_SLOW 3.0
+
+// #define MAX_VEL_FAST_FAST 7.0
+// #define MAX_VEL_FAST 5.0
+// #define MAX_VEL_MID 3.0
+// #define MAX_VEL_SLOW 1.5
 
 #define MAX_ACC_FAST_FAST 20     
 #define MAX_ACC_FAST 15
@@ -45,14 +50,15 @@ private:
     ros::Subscriber ego_pos_cmd_sub_,visual_odom_sub_;
     std::vector<circleMsg> circle_msg_ref_; //圈的位姿参考值
     std::vector<circleMsg> circle_msg_true_; //圈的位姿真值
-    std::vector<circleMsg> circle_msg_camera_; //目标检测中相机坐标系坐标
     std::vector<circleMsg> circle_msg_world_; //目标检测中世界坐标系
     std::map<int,cv::Point3f> mid_point_map_; //任务所需的中间点
     bool airsim_reset_flag_ = false;
     bool odom_init_flag_ = false;
     bool ego_init_flag_ = false;
+    bool adjust_flag = false;
     double odom_init_start_time_ = 0; //里程计初始化的时间
     int circle_num_ = 0; //记录当前在第几个障碍圈
+    double target_pd_yaw = 0.0;
     nav_msgs::Odometry drone_odom_; //无人机使用的odom
     nav_msgs::Odometry visual_odom_; //视觉里程计
     geometry_msgs::PoseStamped drone_target_pose_;
@@ -62,7 +68,7 @@ private:
     void droneStateUpdate(void); //更新无人机状态 主要是最大速度、控制参数
     void droneSetGoalPosion(void); //更新无人机的目标点
     void dronePosionPDControl(void); //无人机位置PD控制
-    int findClosestCircleNum(circleMsg circle_msg); //找到最靠近观测的圈的序号
+    int findClosestCircleNum(cv::Point3f circle_pos); //找到最靠近观测的圈的序号
     std::map<int,cv::Point3f> getMidPoint(void);
     void visualOdometryCallBack(const nav_msgs::Odometry& drone_vins_poses);
     void egoPosCmdCallBack(const quadrotor_msgs::PositionCommand& pos_cmds);
@@ -73,6 +79,7 @@ public:
     circleDetection circle_detection_;
     std::queue<std::pair<std_msgs::Header,std::vector<cv::Mat>>> img_detect_buf_;
     void circleTravelMain(void);
+    circleMsg getAdjustmentPoints(cv::Point3f circleWorldDetect,double offSet);
 };
 
 

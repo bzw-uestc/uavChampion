@@ -16,6 +16,7 @@ Panels:
         - /Image2
         - /Pose1
         - /Pose2
+        - /Pose3
       Splitter Ratio: 0.43611112236976624
     Tree Height: 296
   - Class: rviz/Selection
@@ -145,8 +146,8 @@ Visualization Manager:
             - Alpha: 1
               Autocompute Intensity Bounds: true
               Autocompute Value Bounds:
-                Max Value: 14.125
-                Min Value: 4.114999771118164
+                Max Value: 17.315000534057617
+                Min Value: 11.154999732971191
                 Value: true
               Axis: Z
               Channel Name: intensity
@@ -348,6 +349,22 @@ Visualization Manager:
       Topic: /uav_control/body_tf_test
       Unreliable: false
       Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/Pose
+      Color: 85; 87; 83
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic: /tf_test
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -383,8 +400,8 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 9.638406753540039
-        Y: -6.023478031158447
+        X: 5.03300666809082
+        Y: -8.069595336914062
         Z: 1.7452061001677066e-05
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
@@ -464,7 +481,7 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1848
-  X: 712
+  X: 72
   Y: 27
   depth:
     collapsed: false

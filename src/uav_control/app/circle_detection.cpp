@@ -102,13 +102,13 @@ std::vector<circleMsg> circleDetection::circleDetectionNewFrame(const cv::Mat* i
             
             if(circle_width > threshold_min && circle_width < threshold_max) { 
                 circleMsg circle_detect_msg;
-                circle_detect_msg.pos.x = 0;
-                circle_detect_msg.pos.y = 0;
-                circle_detect_msg.pos.z = 0;
+                circle_detect_msg.pos_camera.x = 0;
+                circle_detect_msg.pos_camera.y = 0;
+                circle_detect_msg.pos_camera.z = 0;
                 circle_detect_msg.width_max = circle_width;
                 circle_detect_msg.ratio = circle_ratio;
                 circle_detect_msg.type = circle_type;
-                circle_detect_msg.center = circle_center;
+                circle_detect_msg.camera_center = circle_center;
                 circle_detect_msg.square = circle_square;
                 circle_msg_return.push_back(circle_detect_msg);
             }

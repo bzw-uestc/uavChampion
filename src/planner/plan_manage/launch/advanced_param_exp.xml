@@ -133,7 +133,7 @@
     <param name="manager/drone_id" value="$(arg drone_id)"/>
 
   <!-- trajectory optimization -->
-    <param name="optimization/lambda_smooth" value="10.0" type="double"/>
+    <param name="optimization/lambda_smooth" value="5.0" type="double"/>
     <param name="optimization/lambda_collision" value="0.5" type="double"/>
     <param name="optimization/lambda_feasibility" value="0.1" type="double"/>
     <param name="optimization/lambda_fitness" value="1.0" type="double"/>
