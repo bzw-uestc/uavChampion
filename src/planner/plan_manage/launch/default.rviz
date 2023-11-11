@@ -146,8 +146,8 @@ Visualization Manager:
             - Alpha: 1
               Autocompute Intensity Bounds: true
               Autocompute Value Bounds:
-                Max Value: 17.315000534057617
-                Min Value: 11.154999732971191
+                Max Value: 1.9149999618530273
+                Min Value: 1.3650000095367432
                 Value: true
               Axis: Z
               Channel Name: intensity
@@ -200,7 +200,7 @@ Visualization Manager:
       Enabled: true
       Name: drone0
     - Class: rviz/Image
-      Enabled: true
+      Enabled: false
       Image Topic: /detect_image_left
       Max Value: 1
       Median window: 5
@@ -210,7 +210,7 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: raw
       Unreliable: false
-      Value: true
+      Value: false
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -271,8 +271,8 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/Image
-      Enabled: false
-      Image Topic: /detect_image_left
+      Enabled: true
+      Image Topic: /drone_0/depth
       Max Value: 1
       Median window: 5
       Min Value: 0
@@ -281,7 +281,7 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: raw
       Unreliable: false
-      Value: false
+      Value: true
     - Angle Tolerance: 0.10000000149011612
       Class: rviz/Odometry
       Covariance:

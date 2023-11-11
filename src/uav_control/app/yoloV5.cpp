@@ -32,48 +32,7 @@ float Yolo::letterbox(
     dw = (float)((int)dw % stride);
     dh = (float)((int)dh % stride);
   }
-class Yolo {
- public:
-  Yolo(char* model_path);
-  float letterbox(
-      const cv::Mat& image,
-      cv::Mat& out_image,
-      const cv::Size& new_shape,
-      int stride,
-      const cv::Scalar& color,
-      bool fixed_shape,
-      bool scale_up);
-  float* blobFromImage(cv::Mat& img);
-  void draw_objects(const cv::Mat& img, float* Boxes, int* ClassIndexs, int* BboxNum);
-  void Init(char* model_path);
-  void Infer(
-      int aWidth,
-      int aHeight,
-      int aChannel,
-      unsigned char* aBytes,
-      float* Boxes,
-      int* ClassIndexs,
-      int* BboxNum);
-  int flag(){
-    if (engine==nullptr){
-        return 1;
-    }else{
-        return 0;
-    }
 
-
-  };
-  ~Yolo();
-
- private:
-  nvinfer1::ICudaEngine* engine = nullptr;
-  nvinfer1::IRuntime* runtime = nullptr;
-  nvinfer1::IExecutionContext* context = nullptr;
-  cudaStream_t stream = nullptr;
-  void* buffs[5];
-  int iH, iW, in_size, out_size1, out_size2, out_size3, out_size4;
-  Logger gLogger;
-};
   dw /= 2.0f;
   dh /= 2.0f;
 
@@ -86,20 +45,6 @@ class Yolo {
   return 1.0f / r;
 }
 
-// float* Yolo::blobFromImage(cv::Mat& img) {
-//   float* blob = new float[img.total() * 3];
-//   int channels = 3;
-//   int img_h = img.rows;
-//   int img_w = img.cols;
-//   for (size_t c = 0; c < channels; c++) {
-//     for (size_t h = 0; h < img_h; h++) {
-//       for (size_t w = 0; w < img_w; w++) {
-//         blob[c * img_w * img_h + h * img_w + w] = (float)img.at<cv::Vec3b>(h, w)[c] / 255.0;
-//       }
-//     }
-//   }
-//   return blob;
-// }
 
 float* Yolo::blobFromImage(cv::Mat& img1, cv::Mat& img2) {
   float* blob = new float[img1.total() * 3 * 2];
