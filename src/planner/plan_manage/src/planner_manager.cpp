@@ -51,7 +51,7 @@ namespace ego_planner
   void EGOPlannerManager::setMaxAcc(const float max_acc) {
     // bspline_optimizer_->setMaxVel(max_vel);
     pp_.max_acc_ = max_acc; 
-    ROS_ERROR("ego_max_vel%f,ego_max_acc:%f",pp_.max_vel_,pp_.max_acc_);
+    // ROS_ERROR("ego_max_vel%f,ego_max_acc:%f",pp_.max_vel_,pp_.max_acc_);
   }
 
 

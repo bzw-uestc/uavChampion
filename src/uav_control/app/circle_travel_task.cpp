@@ -131,7 +131,7 @@ void circleTravelTask::circlePosionWorldUpdate(void) {
                         else if(pos_yolo.z > 6.0) Pc_mid << pos_yolo.z - 2.0, -pos_yolo.x, -pos_yolo.y, 1.0;
                         else if(pos_yolo.z > 5.0) Pc_mid << pos_yolo.z - 1.0, -pos_yolo.x, -pos_yolo.y, 1.0;
                         else if(pos_yolo.z > 4.0) Pc_mid << pos_yolo.z - 0.0, -pos_yolo.x, -pos_yolo.y, 1.0;
-                        else Pc_mid << pos_yolo.z + 2.0 , -pos_yolo.x, -pos_yolo.y, 1.0;
+                        else Pc_mid << pos_yolo.z + 3.0 , -pos_yolo.x, -pos_yolo.y, 1.0;
                         // Pc_mid << pos_yolo.z + 1.0, pos_yolo.x, -pos_yolo.y, 1.0;
                         Eigen::Vector4d Pw_mid = Twb * Pc_mid;
                         circleMsg circle_mid_position_world;
@@ -342,13 +342,13 @@ std::map<int,cv::Point3f> circleTravelTask::getMidPoint(void) {
     circle_mid_point.z = 5;
     mid_point_map.emplace(circle_num,circle_mid_point);
     circle_num = 12;
-    circle_mid_point.x = circle_msg_ref_[circle_num].pos_world.x - 8;
+    circle_mid_point.x = circle_msg_ref_[circle_num].pos_world.x + 15;
     circle_mid_point.y = circle_msg_ref_[circle_num].pos_world.y;
     circle_mid_point.z = circle_msg_ref_[circle_num].pos_world.z;
     mid_point_map.emplace(circle_num,circle_mid_point);
     if(!circle_msg_ref_.empty()) { //以下中间点需要用到圈的参考位姿
         circle_num = 13;
-        circle_mid_point.x = circle_msg_ref_[circle_num].pos_world.x - 6;
+        circle_mid_point.x = circle_msg_ref_[circle_num].pos_world.x;
         circle_mid_point.y = circle_msg_ref_[circle_num].pos_world.y + 10;
         circle_mid_point.z = circle_msg_ref_[circle_num].pos_world.z;
         mid_point_map.emplace(circle_num,circle_mid_point);

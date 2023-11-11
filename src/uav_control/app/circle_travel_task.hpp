@@ -25,9 +25,9 @@
 #define ODOM_INIT_TIME 2
 
 #define MAX_VEL_FAST_FAST 10.0
-#define MAX_VEL_FAST 10.0
-#define MAX_VEL_MID 5.0
-#define MAX_VEL_SLOW 3.0
+#define MAX_VEL_FAST 15.0
+#define MAX_VEL_MID 7.0
+#define MAX_VEL_SLOW 3.5
 
 // #define MAX_VEL_FAST_FAST 7.0
 // #define MAX_VEL_FAST 5.0
@@ -35,7 +35,7 @@
 // #define MAX_VEL_SLOW 1.5
 
 #define MAX_ACC_FAST_FAST 20     
-#define MAX_ACC_FAST 15
+#define MAX_ACC_FAST 20
 #define MAX_ACC_NORMAL 10
 
 #define CAMERA_FX 320
