@@ -25,7 +25,7 @@
 #define ODOM_INIT_TIME 2
 
 #define MAX_VEL_FAST_FAST 10.0
-#define MAX_VEL_FAST 15.0
+#define MAX_VEL_FAST 10.0
 #define MAX_VEL_MID 7.0
 #define MAX_VEL_SLOW 3.5
 
@@ -35,8 +35,8 @@
 // #define MAX_VEL_SLOW 1.5
 
 #define MAX_ACC_FAST_FAST 20     
-#define MAX_ACC_FAST 20
-#define MAX_ACC_NORMAL 10
+#define MAX_ACC_FAST 25
+#define MAX_ACC_NORMAL 20
 
 #define CAMERA_FX 320
 #define CAMERA_FY 320
@@ -46,22 +46,24 @@
 class circleTravelTask{
 private:
     airsimInterface airsim_interface_;
-    ros::Publisher detect_left_pub_,ego_goal_point_pub_,drone_max_vel_pub_,drone_max_acc_pub_;
+    ros::Publisher detect_left_pub_,ego_goal_point_pub_,circle_pos_world_pub_,drone_max_vel_pub_,drone_max_acc_pub_;
     ros::Subscriber ego_pos_cmd_sub_,visual_odom_sub_;
     std::vector<circleMsg> circle_msg_ref_; //圈的位姿参考值
     std::vector<circleMsg> circle_msg_true_; //圈的位姿真值
     std::vector<circleMsg> circle_msg_world_; //目标检测中世界坐标系
-    std::map<int,cv::Point3f> mid_point_map_; //任务所需的中间点
+    std::vector<circleMsg> drone_taget_world_; //提前对位用的中间点
+    std::map<int,std::vector<cv::Point3f>> mid_points_map_; //任务所需的中间点
     bool airsim_reset_flag_ = false;
     bool odom_init_flag_ = false;
     bool ego_init_flag_ = false;
-    bool adjust_flag = false;
+    bool adjust_flag_ = false;
     double odom_init_start_time_ = 0; //里程计初始化的时间
     int circle_num_ = 0; //记录当前在第几个障碍圈
     double target_pd_yaw = 0.0;
     nav_msgs::Odometry drone_odom_; //无人机使用的odom
     nav_msgs::Odometry visual_odom_; //视觉里程计
     geometry_msgs::PoseStamped drone_target_pose_;
+    geometry_msgs::PoseStamped circle_target_pose_;
     quadrotor_msgs::PositionCommand ego_pos_cmd_;
     void droneFdbUpdate(void); //更新无人机反馈信息
     void circlePosionWorldUpdate(void); //更新障碍圈世界坐标
@@ -69,7 +71,7 @@ private:
     void droneSetGoalPosion(void); //更新无人机的目标点
     void dronePosionPDControl(void); //无人机位置PD控制
     int findClosestCircleNum(cv::Point3f circle_pos); //找到最靠近观测的圈的序号
-    std::map<int,cv::Point3f> getMidPoint(void);
+    std::map<int,std::vector<cv::Point3f>> getMidPoint(void);
     void visualOdometryCallBack(const nav_msgs::Odometry& drone_vins_poses);
     void egoPosCmdCallBack(const quadrotor_msgs::PositionCommand& pos_cmds);
     bool droneReachedLocation(cv::Point3f circle_taget,nav_msgs::Odometry fdb,double distance_dxyz);

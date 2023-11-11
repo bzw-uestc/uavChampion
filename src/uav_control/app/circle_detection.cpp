@@ -249,7 +249,7 @@ cv::Point3f circleDetection::uv2xyz(cv::Point2f uvLeft, cv::Point2f uvRight)
 	cv::Point3f world;
 	world.x = XYZ.at<float>(0, 0);
 	world.y = XYZ.at<float>(1, 0);
-	world.z = XYZ.at<float>(2, 0) + 1.0; //穿过圆环 距离+1.0
+	world.z = XYZ.at<float>(2, 0); //穿过圆环 距离+1.0
 
 	return world;
 }

@@ -146,8 +146,8 @@ Visualization Manager:
             - Alpha: 1
               Autocompute Intensity Bounds: true
               Autocompute Value Bounds:
-                Max Value: 1.9149999618530273
-                Min Value: 1.3650000095367432
+                Max Value: 2.575000047683716
+                Min Value: 0.04500000178813934
                 Value: true
               Axis: Z
               Channel Name: intensity
@@ -200,7 +200,7 @@ Visualization Manager:
       Enabled: true
       Name: drone0
     - Class: rviz/Image
-      Enabled: false
+      Enabled: true
       Image Topic: /detect_image_left
       Max Value: 1
       Median window: 5
@@ -210,7 +210,7 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: raw
       Unreliable: false
-      Value: false
+      Value: true
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -271,7 +271,7 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/Image
-      Enabled: true
+      Enabled: false
       Image Topic: /drone_0/depth
       Max Value: 1
       Median window: 5
@@ -281,7 +281,7 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: raw
       Unreliable: false
-      Value: true
+      Value: false
     - Angle Tolerance: 0.10000000149011612
       Class: rviz/Odometry
       Covariance:
@@ -353,7 +353,7 @@ Visualization Manager:
       Axes Length: 1
       Axes Radius: 0.10000000149011612
       Class: rviz/Pose
-      Color: 85; 87; 83
+      Color: 255; 25; 0
       Enabled: true
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
@@ -362,7 +362,7 @@ Visualization Manager:
       Shaft Length: 1
       Shaft Radius: 0.05000000074505806
       Shape: Arrow
-      Topic: /tf_test
+      Topic: /circle_pos_world
       Unreliable: false
       Value: true
   Enabled: true
@@ -392,7 +392,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 34.12656021118164
+      Distance: 30.223533630371094
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -400,17 +400,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 5.03300666809082
-        Y: -8.069595336914062
-        Z: 1.7452061001677066e-05
+        X: 15.910661697387695
+        Y: -4.020321369171143
+        Z: 1.2963780136487912e-05
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.48479747772216797
+      Pitch: 0.029797714203596115
       Target Frame: <Fixed Frame>
-      Yaw: 3.341582775115967
+      Yaw: 2.954761028289795
     Saved:
       - Class: rviz/FPS
         Enable Stereo Rendering:

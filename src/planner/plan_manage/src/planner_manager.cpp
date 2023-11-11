@@ -61,10 +61,10 @@ namespace ego_planner
       bspline_optimizer_->setLamda2(4.0);
     }
     else if(pp_.max_vel_ > 5.0) {
-      bspline_optimizer_->setLamda2(1.0);
+      bspline_optimizer_->setLamda2(2.0);
     }
     else if(pp_.max_vel_ < 5.0){
-      bspline_optimizer_->setLamda2(0.5);
+      bspline_optimizer_->setLamda2(1.0);
     }
    
     // ROS_ERROR("lamda2:%f",bspline_optimizer_->getLamda2());

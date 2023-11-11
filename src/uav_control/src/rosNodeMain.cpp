@@ -117,7 +117,7 @@ int main(int argc, char** argv)
           ///////////////////////////////////openCV SGBM///////////////////////////////////////////////////////
 
           cv::Mat disparity = coex_deep_.deep(ptr0->image, ptr1->image); //use coex to get deep
-          // disparity.convertTo(disparity, CV_8U);
+          disparity.convertTo(disparity, CV_16UC1);
 
           // cv::Mat disparity = getDepthFromStereo(gray_image_left,gray_image_right,320.0,95);   //use opencv to get deep
           // cv::Mat disparity = getDepthFromHitNet(ptr0->image, ptr1->image, 320.0,95);             //use hitnet to get deep
@@ -127,7 +127,7 @@ int main(int argc, char** argv)
 
           // cv::Mat img_depth = disparity2depth(disparity,320.0,95.0);
           // cv::Mat img_depth32f = disparity2depth_float(disparity,320.0,95.0);
-          sensor_msgs::ImagePtr rosDepthImage = cv_bridge::CvImage(std_msgs::Header(), "32FC1", disparity).toImageMsg();
+          sensor_msgs::ImagePtr rosDepthImage = cv_bridge::CvImage(std_msgs::Header(), "16UC1", disparity).toImageMsg();
           rosDepthImage->header.stamp = color_msg0->header.stamp;  //同步深度图时间戳
           rosDepthImage->header.frame_id = "camera_depth";
           stereo_pub.publish(rosDepthImage);

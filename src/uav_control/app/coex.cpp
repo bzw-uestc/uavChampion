@@ -181,7 +181,7 @@ cv::Mat Coex::deep(const cv::Mat &cimg1, const cv::Mat &cimg2) {
     // std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
     int time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     // ROS_ERROR("%dms",time);
-    return imageMat;
+    return imageMat * 1000;
   }
   else {
     std::cerr << "--> arguments not right!" << std::endl;
