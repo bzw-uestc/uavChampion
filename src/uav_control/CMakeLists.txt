@@ -125,7 +125,7 @@ catkin_package(
 ## Build ##
 ###########
 
-set(tensorRT_DIR ${PROJECT_SOURCE_DIR}/../../lib/TensorRT-8.4.3.1)
+set(tensorRT_DIR ${PROJECT_SOURCE_DIR}/../../lib/TensorRT-8.6.1.6)
 set(onnxruntime_DIR ${PROJECT_SOURCE_DIR}/../../lib/onnxruntime-linux-x64-gpu-1.16.1)
 
 message(--------------------------------------------------${tensorRT_DIR})
@@ -159,7 +159,7 @@ link_directories(${onnxruntime_DIR}/lib)
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_node src/rosNodeMain.cpp app/circle_travel_task.cpp app/yoloV5.cpp app/deep.cpp 
+add_executable(${PROJECT_NAME}_node src/rosNodeMain.cpp app/circle_travel_task.cpp app/yoloV5.cpp app/deep.cpp app/coex.cpp 
 app/circle_detection.cpp app/airsim_interface.cpp)
 
 ## Rename C++ executable without prefix

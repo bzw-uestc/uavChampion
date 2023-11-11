@@ -66,7 +66,7 @@ void circleTravelTask::circlePosionWorldUpdate(void) {
         img_detect[1] = img_detect_vector[1];
         img_detect_buf_.pop();
         std::vector<circleMsg> circle_msg_camera;
-        circle_msg_camera = circle_detection_.circleDetectionNewFrame(img_detect,15,250); //20 120为检测阈值 
+        circle_msg_camera = circle_detection_.circleDetectionNewFrame(img_detect,15,200); //20 120为检测阈值 
         sensor_msgs::ImagePtr detect_image_left = cv_bridge::CvImage(img_header, "bgr8", img_detect[0]).toImageMsg();
         detect_left_pub_.publish(detect_image_left); //发布检测到的图像
         if(!circle_msg_camera.empty()) { //当前帧下检测到障碍圈
@@ -111,7 +111,7 @@ void circleTravelTask::circlePosionWorldUpdate(void) {
                     if(closest_circle_num == -1) break;
                     if(circle_msg_camera[i].ratio < 0.8 || circle_msg_camera[i].ratio > 1.25 )
                     {
-                        if(pos_yolo.z < 10.0){
+                        if(pos_yolo.z < 15.0){
                             adjust_flag = true;
                             circleMsg circle_adjust_position_world;
                             circle_adjust_position_world = getAdjustmentPoints(circle_position_world, 6);
