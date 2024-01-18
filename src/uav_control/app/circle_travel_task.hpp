@@ -24,8 +24,8 @@
 
 #define ODOM_INIT_TIME 2
 
-#define MAX_VEL_FAST_FAST 10.0
-#define MAX_VEL_FAST 10.0
+#define MAX_VEL_FAST_FAST 7.0
+#define MAX_VEL_FAST 7.0
 #define MAX_VEL_MID 7.0
 #define MAX_VEL_SLOW 3.5
 
@@ -35,7 +35,7 @@
 // #define MAX_VEL_SLOW 1.5
 
 #define MAX_ACC_FAST_FAST 20     
-#define MAX_ACC_FAST 25
+#define MAX_ACC_FAST 20
 #define MAX_ACC_NORMAL 20
 
 #define CAMERA_FX 320
@@ -47,6 +47,7 @@ class circleTravelTask{
 private:
     airsimInterface airsim_interface_;
     ros::Publisher detect_left_pub_,ego_goal_point_pub_,circle_pos_world_pub_,drone_max_vel_pub_,drone_max_acc_pub_;
+    ros::Publisher drone_odom_pub_;
     ros::Subscriber ego_pos_cmd_sub_,visual_odom_sub_;
     std::vector<circleMsg> circle_msg_ref_; //圈的位姿参考值
     std::vector<circleMsg> circle_msg_true_; //圈的位姿真值

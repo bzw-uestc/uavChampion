@@ -45,7 +45,7 @@ std::queue<sensor_msgs::ImageConstPtr> img_buf0;
 std::queue<sensor_msgs::ImageConstPtr> img_buf1; //stereo_img
 std::queue<geometry_msgs::Pose::ConstPtr> gps_buf;
 
-int cnt_i = 500, cnt_j = 0;
+int cnt_i = 0, cnt_j = 0;
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "uav_control_node");
@@ -67,12 +67,12 @@ int main(int argc, char** argv)
     }
   });
 
-  std::string package_path = ros::package::getPath("uav_control");
-  Coex coex_deep_;
-  std::string coex_model_path_str = package_path + "/detect_model/coex86.trt";
-  char* coex_model_path=const_cast<char*>(coex_model_path_str.c_str());
-  ROS_ERROR("coex_model_path:%s", coex_model_path);
-  coex_deep_.loadModel(coex_model_path); 
+  // std::string package_path = ros::package::getPath("uav_control");
+  // Coex coex_deep_;
+  // std::string coex_model_path_str = package_path + "/detect_model/coex86.trt";
+  // char* coex_model_path=const_cast<char*>(coex_model_path_str.c_str());
+  // ROS_ERROR("coex_model_path:%s", coex_model_path);
+  // coex_deep_.loadModel(coex_model_path); 
 
 
   ros::Rate msgProcess_rate(50);
@@ -110,38 +110,39 @@ int main(int argc, char** argv)
           circle_travel_task.img_detect_buf_.push(make_pair(color_msg0->header,img_raw_detect));
 
           //直接在该函数中进行深度图的计算
-          // cv::Mat gray_image_left,gray_image_right;
-          // cv::cvtColor(ptr0->image, gray_image_left, cv::COLOR_BGR2GRAY);
-          // cv::cvtColor(ptr1->image, gray_image_right, cv::COLOR_BGR2GRAY);
-
+          cv::Mat gray_image_left,gray_image_right;
+          cv::cvtColor(ptr0->image, gray_image_left, cv::COLOR_BGR2GRAY);
+          cv::cvtColor(ptr1->image, gray_image_right, cv::COLOR_BGR2GRAY);
+          cv::Mat disparity = getDepthFromStereo(gray_image_left,gray_image_right,320.0,95);   //use opencv to get deep
+          cv::Mat img_depth = disparity2depth(disparity,320.0,95.0);
+          sensor_msgs::ImagePtr rosDepthImage = cv_bridge::CvImage(std_msgs::Header(), "16UC1", img_depth).toImageMsg();
           ///////////////////////////////////openCV SGBM///////////////////////////////////////////////////////
 
-          cv::Mat disparity = coex_deep_.deep(ptr0->image, ptr1->image); //use coex to get deep
-          disparity.convertTo(disparity, CV_16UC1);
+          // cv::Mat disparity = coex_deep_.deep(ptr0->image, ptr1->image); //use coex to get deep
+          // disparity.convertTo(disparity, CV_16UC1);
 
-          // cv::Mat disparity = getDepthFromStereo(gray_image_left,gray_image_right,320.0,95);   //use opencv to get deep
           // cv::Mat disparity = getDepthFromHitNet(ptr0->image, ptr1->image, 320.0,95);             //use hitnet to get deep
-
           // cv::imshow("disparity", disparity);
           // cv::waitKey(1);
 
-          // cv::Mat img_depth = disparity2depth(disparity,320.0,95.0);
+          
           // cv::Mat img_depth32f = disparity2depth_float(disparity,320.0,95.0);
-          sensor_msgs::ImagePtr rosDepthImage = cv_bridge::CvImage(std_msgs::Header(), "16UC1", disparity).toImageMsg();
+          // sensor_msgs::ImagePtr rosDepthImage = cv_bridge::CvImage(std_msgs::Header(), "16UC1", disparity).toImageMsg();
+
           rosDepthImage->header.stamp = color_msg0->header.stamp;  //同步深度图时间戳
           rosDepthImage->header.frame_id = "camera_depth";
           stereo_pub.publish(rosDepthImage);
 
           // //数据集的采集
-          // cnt_j++;
-          // if(cnt_j > 0) {
-          //   cnt_j = 0;
-          //   std::string name_left = "/home/uestc/bzw_ws/uavChampion/left/" + std::to_string(cnt_i) + ".jpg";
-          //   std::string name_right = "/home/uestc/bzw_ws/uavChampion/right/" + std::to_string(cnt_i) + ".jpg";
-          //   cnt_i++;
-          //   cv::imwrite(name_left, ptr0->image);
-          //   cv::imwrite(name_right, ptr1->image);
-          // }
+          cnt_j++;
+          if(cnt_j > 10) {
+            cnt_j = 0;
+            std::string name_left = "/home/uestc/bzw_ws/uavChampion/left/" + std::to_string(cnt_i) + ".jpg";
+            // std::string name_right = "/home/uestc/bzw_ws/uavChampion/right/" + std::to_string(cnt_i) + ".jpg";
+            cnt_i++;
+            cv::imwrite(name_left, ptr0->image);
+            // cv::imwrite(name_right, ptr1->image);
+          }
 
           auto end = std::chrono::system_clock::now();
           int time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();

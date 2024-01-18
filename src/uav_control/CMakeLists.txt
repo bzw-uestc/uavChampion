@@ -183,9 +183,9 @@ target_link_libraries(${PROJECT_NAME}_node
    cudart
  )
 
-add_subdirectory("deep_image/StereoAlgorithms")
-set_target_properties(HitNet PROPERTIES ENABLE_EXPORTS ON)
-target_link_libraries(uav_control_node HitNet)
+# add_subdirectory("deep_image/StereoAlgorithms")
+# set_target_properties(HitNet PROPERTIES ENABLE_EXPORTS ON)
+# target_link_libraries(uav_control_node HitNet)
 #############
 ## Install ##
 #############

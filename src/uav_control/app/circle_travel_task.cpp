@@ -19,18 +19,20 @@ void circleTravelTask::circleTravelMain(void) {
     else if(circle_msg_world_.empty()) { //获取仿真器信息
         circle_msg_ref_ = airsim_interface_.airsimGetCirclePosRef(); //获取障碍圈参考位姿
         circle_msg_true_ = airsim_interface_.airsimGetCirclePosTrue(); //获取障碍圈真实位姿
-        circle_msg_world_.assign(circle_msg_ref_.begin(), circle_msg_ref_.end()); //将参考位姿拷贝 用以后续对比
-        drone_taget_world_.assign(circle_msg_ref_.begin(), circle_msg_ref_.end()); //将参考位姿拷贝 用以后续对比
+        // circle_msg_world_.assign(circle_msg_ref_.begin(), circle_msg_ref_.end()); //将参考位姿拷贝 用以后续对比
+        // drone_taget_world_.assign(circle_msg_ref_.begin(), circle_msg_ref_.end()); //将参考位姿拷贝 用以后续对比
+        circle_msg_world_.assign(circle_msg_true_.begin(), circle_msg_true_.end()); //将参考位姿拷贝 用以后续对比
+        drone_taget_world_.assign(circle_msg_true_.begin(), circle_msg_true_.end()); //将参考位姿拷贝 用以后续对比
         mid_points_map_ = getMidPoint(); //获取当前任务下所需的中间点
         std::queue<std::pair<std_msgs::Header,std::vector<cv::Mat>>> queue_empty; //清空队列用
         std::swap(img_detect_buf_,queue_empty); //清空初始化时产生的历史图像
     }
     else { //main
         droneFdbUpdate();  //1.无人机所需的反馈信息更新 里程计等
-        circlePosionWorldUpdate(); //2.感知障碍圈，更新障碍圈的世界坐标
+        // circlePosionWorldUpdate(); //2.感知障碍圈，更新障碍圈的世界坐标
         droneSetGoalPosion(); //3.更新无人机当前帧的目标点
         droneStateUpdate(); //4.根据当前帧的目标障碍圈更新无人机的控制参数
-        dronePosionPDControl(); //5.更新无人机PD控制器
+        // dronePosionPDControl(); //5.更新无人机PD控制器
     }
 }
 
@@ -42,24 +44,30 @@ circleTravelTask::circleTravelTask(ros::NodeHandle &nh): circle_detection_(nh),a
     ego_pos_cmd_sub_ = nh.subscribe("/position_cmd", 10, &circleTravelTask::egoPosCmdCallBack, this); //ego-planner发出的目标位姿
     drone_max_vel_pub_ = nh.advertise<std_msgs::Float64>("/drone_1/max_vel",10); //max vel to pd and ego
     drone_max_acc_pub_ = nh.advertise<std_msgs::Float64>("/drone_1/max_acc",10); //max vel to pd and ego
+    drone_odom_pub_ = nh.advertise<nav_msgs::Odometry>("/drone_true_odom",10);
 }
 
 void circleTravelTask::droneFdbUpdate(void) {
-    //odom update
+    // odom update
     // ROS_ERROR("circle, x:%f,y:%f,z:%f",circle_msg_true_[circle_num_].pos_world.x,circle_msg_true_[circle_num_].pos_world.y,circle_msg_true_[circle_num_].pos_world.z);
     // ROS_ERROR("ego,x:%f,y:%f,z:%f",drone_target_pose_.pose.position.x,drone_target_pose_.pose.position.y,drone_target_pose_.pose.position.z);
     // ROS_ERROR("vins, x:%f,y:%f,z:%f",drone_odom_.pose.pose.position.x,drone_odom_.pose.pose.position.y,drone_odom_.pose.pose.position.z);
-    drone_odom_.pose.pose.position.x = visual_odom_.pose.pose.position.x;
-    drone_odom_.pose.pose.position.y = visual_odom_.pose.pose.position.y;
-    drone_odom_.pose.pose.position.z = visual_odom_.pose.pose.position.z;
-    drone_odom_.pose.pose.orientation = visual_odom_.pose.pose.orientation;
+    // drone_odom_.pose.pose.position.x = visual_odom_.pose.pose.position.x;
+    // drone_odom_.pose.pose.position.y = visual_odom_.pose.pose.position.y;
+    // drone_odom_.pose.pose.position.z = visual_odom_.pose.pose.position.z;
+    // drone_odom_.pose.pose.orientation = visual_odom_.pose.pose.orientation;
+    drone_odom_.header.frame_id = "world";
+    drone_odom_.pose.pose.position.x = airsim_interface_.drone_poses_true_->pose.position.x;
+    drone_odom_.pose.pose.position.y = -airsim_interface_.drone_poses_true_->pose.position.y;
+    drone_odom_.pose.pose.position.z = -airsim_interface_.drone_poses_true_->pose.position.z;
+    drone_odom_.pose.pose.orientation = airsim_interface_.drone_poses_true_->pose.orientation;
+    drone_odom_pub_.publish(drone_odom_);
 }
 
 void circleTravelTask::circlePosionWorldUpdate(void) {
     /////////////////////////////使用Yolo检测器并利用双目相机恢复障碍圈3D坐标/////////////////////////////////////////
     //返回值为：std::vector<std::vector<double>> 外部vector代表该帧图像中有多少个符合检测阈值的障碍圈
     //内部vector为每个障碍圈的信息，大小为6：障碍圈中心xyz三维坐标、长宽的最大值、倾斜度、圈的类型
-
     if(!img_detect_buf_.empty()) {
         std_msgs::Header img_header = img_detect_buf_.front().first;
         std::vector<cv::Mat> img_detect_vector = img_detect_buf_.front().second;
@@ -200,7 +208,7 @@ circleMsg circleTravelTask::getAdjustmentPoints(cv::Point3f circleWorldDetect,do
 void circleTravelTask::droneSetGoalPosion(void) { //设置无人机目标点
     //每一帧开始先判断无人机是否到达目标障碍圈
     // ROS_ERROR("FLAG:%d",droneReachedLocation(circle_msg_world_[circle_num_].pos_world,drone_odom_,1.0));
-    if(droneReachedLocation(circle_msg_world_[circle_num_].pos_world,drone_odom_,1.5)) {
+    if(droneReachedLocation(circle_msg_world_[circle_num_].pos_world,drone_odom_,0.5)) {
         if(circle_num_ < 16) circle_num_++;
         if(circle_num_ == 8) circle_num_ = 12; //跳过剩余黄圈
         adjust_flag_ = false;
@@ -253,6 +261,15 @@ void circleTravelTask::droneSetGoalPosion(void) { //设置无人机目标点
         circle_pos_world_pub_.publish(circle_target_pose_); 
         // ROS_ERROR("ego,x:%f,y:%f,z:%f",drone_target_pose_.pose.position.x,drone_target_pose_.pose.position.y,drone_target_pose_.pose.position.z);
     }
+    // ROS_ERROR("x:%f, y:%f, z:%f",drone_target_pose_.pose.position.x,drone_target_pose_.pose.position.y,drone_target_pose_.pose.position.z);
+    double dx = drone_target_pose_.pose.position.x - drone_odom_.pose.pose.position.x;
+    double dy = drone_target_pose_.pose.position.y - drone_odom_.pose.pose.position.y;
+    double dz = drone_target_pose_.pose.position.z - drone_odom_.pose.pose.position.z;
+    double posecmd_yaw = std::atan2(dy, dx);
+
+    airsim_interface_.airsimSetGoalPosition(drone_target_pose_.pose.position.x,drone_target_pose_.pose.position.y,
+                                            drone_target_pose_.pose.position.z,posecmd_yaw);
+                                      
 }
 
 //更新无人机状态 根据目标圈的长宽、倾斜度改变无人机的最大速度、控制参数
@@ -317,7 +334,7 @@ void circleTravelTask::dronePosionPDControl(void) { //无人机位置PD控制
         if (adjust_flag_ == true)
         {
            airsim_interface_.airsimSetGoalPosition(ego_pos_cmd_.position.x,ego_pos_cmd_.position.y,
-                                                ego_pos_cmd_.position.z,target_pd_yaw);
+                                                   ego_pos_cmd_.position.z,target_pd_yaw);
         }
     }
 }
@@ -359,9 +376,9 @@ std::map<int,std::vector<cv::Point3f>> circleTravelTask::getMidPoint(void) {
 
     circle_num = 12;
     circle_mid_points.clear();
-    mid_point.x = circle_msg_ref_[circle_num].pos_world.x + 15;
+    mid_point.x = circle_msg_ref_[circle_num].pos_world.x + 25;
     mid_point.y = circle_msg_ref_[circle_num].pos_world.y;
-    mid_point.z = circle_msg_ref_[circle_num].pos_world.z;
+    mid_point.z = circle_msg_ref_[circle_num].pos_world.z + 3;
     circle_mid_points.emplace_back(mid_point);
     mid_points_map.emplace(circle_num,circle_mid_points);
 
@@ -369,7 +386,7 @@ std::map<int,std::vector<cv::Point3f>> circleTravelTask::getMidPoint(void) {
         circle_num = 13;
         circle_mid_points.clear();
         mid_point.x = circle_msg_ref_[circle_num].pos_world.x;
-        mid_point.y = circle_msg_ref_[circle_num].pos_world.y + 10;
+        mid_point.y = circle_msg_ref_[circle_num].pos_world.y + 20;
         mid_point.z = circle_msg_ref_[circle_num].pos_world.z;
         circle_mid_points.emplace_back(mid_point);
         mid_points_map.emplace(circle_num,circle_mid_points);

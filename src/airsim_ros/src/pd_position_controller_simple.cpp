@@ -41,11 +41,9 @@ void PIDPositionController::initialize_ros()
     // airsim_vel_cmd_world_frame_pub_ = nh_.advertise<airsim_ros::VelCmd>("/airsim_node/drone_1/vel_cmd_world_frame", 1);
     airsim_vel_cmd_body_frame_pub_ = nh_.advertise<airsim_ros::VelCmd>("/airsim_node/drone_1/vel_cmd_body_frame", 1);
     // ROS subscribers
-    #ifdef TRUE_POSE_DEBUGE
-        airsim_odom_sub_ = nh_.subscribe("/airsim_node/drone_1/debug/pose_gt", 50, &PIDPositionController::airsim_odom_cb, this);
-    #else
-      visual_odom_sub_ = nh_.subscribe("/vins_fusion/imu_propagate", 1, &PIDPositionController::visual_odom_cb, this);
-    #endif
+
+    airsim_odom_sub_ = nh_.subscribe("/airsim_node/drone_1/debug/pose_gt", 50, &PIDPositionController::airsim_odom_cb, this);
+    // visual_odom_sub_ = nh_.subscribe("/vins_fusion/imu_propagate", 1, &PIDPositionController::visual_odom_cb, this);
     drone_max_vel_sub_ = nh_.subscribe("/drone_1/max_vel", 1, &PIDPositionController::max_vel_cb, this);
     //home_geopoint_sub_ = nh_.subscribe("/airsim_node/home_geo_point", 50, &PIDPositionController::home_geopoint_cb, this);
     // todo publish this under global nodehandle / "airsim node" and hide it from user
@@ -211,7 +209,7 @@ void PIDPositionController::compute_control_cmd()
     double d_term_x = params_.kd_x * prev_error_.x;
     double d_term_y = params_.kd_y * prev_error_.y;
     double d_term_z = params_.kd_z * prev_error_.z;
-    double d_term_yaw = params_.kp_yaw * prev_error_.yaw;
+    double d_term_yaw = params_.kd_yaw * prev_error_.yaw;
 
     prev_error_ = curr_error_;
 

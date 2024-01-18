@@ -23,7 +23,7 @@ private:
     airsim_ros::SetLocalPosition pos_cmd_client_;
     ros::ServiceClient set_goal_position_client_,sim_reset_client_,sim_takeoff_client_;
     airsim_ros::TreePosesConstPtr tree_poses_true_; //树的位置真值 只能debug用
-    geometry_msgs::PoseStampedConstPtr drone_poses_true_; //仿真器无人机真实位姿
+    
     airsim_ros::CirclePosesConstPtr circle_poses_ref_;   //障碍圈位姿参考值
     airsim_ros::CirclePosesConstPtr circle_poses_true_;  //障碍圈位姿真值 只能debug用
     ros::Subscriber drone_true_odom_sub_,circle_poses_ref_sub_,circle_poses_true_sub_; //仿真器发送的话题
@@ -38,6 +38,7 @@ public:
     void airsimSetGoalPosition(const double x,const double y,const double z,const double yaw);
     std::vector<circleMsg> airsimGetCirclePosRef(void);
     std::vector<circleMsg> airsimGetCirclePosTrue(void);
-    bool airsimGetDronePosTrue();
+    geometry_msgs::PoseStampedConstPtr drone_poses_true_; //仿真器无人机真实位姿
+    // bool airsimGetDronePosTrue();
 };
 #endif
