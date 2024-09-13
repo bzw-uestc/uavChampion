@@ -39,7 +39,7 @@ using std::ofstream;
 using std::string;
 using std::vector;
 
-class Logger : public ILogger {
+class Logger1 : public ILogger {
  public:
   void log(Severity severity, const char* msg) noexcept override {
     if (severity != Severity::kINFO) {
@@ -92,7 +92,7 @@ class Yolo {
   cudaStream_t stream = nullptr;
   void* buffs[5];
   int iH, iW, in_size, out_size1, out_size2, out_size3, out_size4;
-  Logger gLogger;
+  Logger1 gLogger;
 };
 
 // int detect(cv::Mat image, Yolo yolo);

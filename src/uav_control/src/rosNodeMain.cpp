@@ -26,10 +26,12 @@
 #include "../app/circle_travel_task.hpp"
 #include "../math/kalman_filter.hpp"
 #include "../deep_image/StereoAlgorithms/HitNet/include/HitNetAlgorithm.h"
+
 // #include "../app/deep.hpp"
 // #include "../app/onnx2.hpp"
 // #include "../deep_image/StereoAlgorithms/FastACVNet_plus/include/FastACVNet_plus_Algorithm.h"
 // #include"FastACVNet_plus_Algorithm.h"
+
 
 void image0_callback(const sensor_msgs::ImageConstPtr &color_msg);
 void image1_callback(const sensor_msgs::ImageConstPtr &color_msg);
@@ -50,7 +52,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "uav_control_node");
   ros::NodeHandle nh("~");
-
+  
   ros::Publisher stereo_pub = nh.advertise<sensor_msgs::Image>("/drone_0/depth", 1);
   ros::Subscriber sub_left_image,sub_right_image,sub_gps_msg;
 
@@ -59,7 +61,8 @@ int main(int argc, char** argv)
 
 
   circleTravelTask circle_travel_task(nh);
-  ros::Rate circle_travel_loop_rate(20);//设置循环频率，20Hz；也可以设为其他频率，如1为1Hz
+  ros::Rate circle_travel_loop_rate(100);//设置循环频率，20Hz；也可以设为其他频率，如1为1Hz
+  // circle_travel_task.inityoloV8();
   std::thread circle_travel_thread([&]() {
     while(ros::ok()) {
       circle_travel_task.circleTravelMain();
@@ -74,7 +77,7 @@ int main(int argc, char** argv)
   // ROS_ERROR("coex_model_path:%s", coex_model_path);
   // coex_deep_.loadModel(coex_model_path); 
 
-
+  
   ros::Rate msgProcess_rate(50);
   std::thread msgProcess_thread([&]() {
     while(ros::ok()) {
@@ -134,15 +137,15 @@ int main(int argc, char** argv)
           stereo_pub.publish(rosDepthImage);
 
           // //数据集的采集
-          cnt_j++;
-          if(cnt_j > 10) {
-            cnt_j = 0;
-            std::string name_left = "/home/uestc/bzw_ws/uavChampion/left/" + std::to_string(cnt_i) + ".jpg";
-            // std::string name_right = "/home/uestc/bzw_ws/uavChampion/right/" + std::to_string(cnt_i) + ".jpg";
-            cnt_i++;
-            cv::imwrite(name_left, ptr0->image);
-            // cv::imwrite(name_right, ptr1->image);
-          }
+          // cnt_j++;
+          // if(cnt_j > 10) {
+          //   cnt_j = 0;
+          //   std::string name_left = "/home/uestc/bzw_ws/uavChampion/left/" + std::to_string(cnt_i) + ".jpg";
+          //   // std::string name_right = "/home/uestc/bzw_ws/uavChampion/right/" + std::to_string(cnt_i) + ".jpg";
+          //   cnt_i++;
+          //   cv::imwrite(name_left, ptr0->image);
+          //   // cv::imwrite(name_right, ptr1->image);
+          // }
 
           auto end = std::chrono::system_clock::now();
           int time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();

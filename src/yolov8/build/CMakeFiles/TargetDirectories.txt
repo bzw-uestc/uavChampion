@@ -1,0 +1,4 @@
+/home/uestc/bzw_ws/uavChampion/src/yolov8/build/CMakeFiles/rebuild_cache.dir
+/home/uestc/bzw_ws/uavChampion/src/yolov8/build/CMakeFiles/edit_cache.dir
+/home/uestc/bzw_ws/uavChampion/src/yolov8/build/CMakeFiles/yolov8_seg.dir
+/home/uestc/bzw_ws/uavChampion/src/yolov8/build/CMakeFiles/myplugins.dir

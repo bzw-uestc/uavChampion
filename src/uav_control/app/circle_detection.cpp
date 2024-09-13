@@ -3,12 +3,12 @@
 
 circleDetection::circleDetection(ros::NodeHandle &nh){
     ////////////////////////////////加载YOLO模型函数////////////////////////////////////
-    std::string package_path = ros::package::getPath("uav_control");
-    std::string model_path_str = package_path + "/detect_model/yolov5n4090trt84.trt";
-    // std::string model_path_str = package_path + "/detect_model/yolov5n_1025_lzh.trt";
-    char* model_path=const_cast<char*>(model_path_str.c_str());
-    ROS_ERROR("model_path:%s", model_path);
-    yolo_detect_.loadModel(model_path); 
+    // std::string package_path = ros::package::getPath("uav_control");
+    // std::string model_path_str = package_path + "/detect_model/yolov5n4090trt84.trt";
+    // // std::string model_path_str = package_path + "/detect_model/yolov5n_1025_lzh.trt";
+    // char* model_path=const_cast<char*>(model_path_str.c_str());
+    // ROS_ERROR("model_path:%s", model_path);
+    // yolo_detect_.loadModel(model_path); 
 }
 
 std::vector<circleMsg> circleDetection::circleDetectionNewFrame(const cv::Mat* img_detect,float threshold_min, float threshold_max) {

@@ -21,22 +21,28 @@
 #include "circle_detection.hpp"
 #include "../math/kalman_filter.hpp"
 #include "airsim_interface.hpp"
+#include "../../yolov8/include/yolov8_.h"
+#include <cmath>
+#include <Eigen/Eigenvalues>
+#include <algorithm>
+#include "../../yolov8/include/pose.h"
+#include "controller.hpp"
 
 #define ODOM_INIT_TIME 2
 
-#define MAX_VEL_FAST_FAST 7.0
-#define MAX_VEL_FAST 7.0
-#define MAX_VEL_MID 7.0
-#define MAX_VEL_SLOW 3.5
+#define MAX_VEL_FAST_FAST 1.0
+#define MAX_VEL_FAST 1.0
+#define MAX_VEL_MID 1.0
+#define MAX_VEL_SLOW 1.0
 
 // #define MAX_VEL_FAST_FAST 7.0
 // #define MAX_VEL_FAST 5.0
 // #define MAX_VEL_MID 3.0
 // #define MAX_VEL_SLOW 1.5
 
-#define MAX_ACC_FAST_FAST 20     
-#define MAX_ACC_FAST 20
-#define MAX_ACC_NORMAL 20
+#define MAX_ACC_FAST_FAST 3.0     
+#define MAX_ACC_FAST 3.0
+#define MAX_ACC_NORMAL 3.0
 
 #define CAMERA_FX 320
 #define CAMERA_FY 320
@@ -62,10 +68,14 @@ private:
     int circle_num_ = 0; //记录当前在第几个障碍圈
     double target_pd_yaw = 0.0;
     nav_msgs::Odometry drone_odom_; //无人机使用的odom
+    double drone_odom_yaw_; //无人机odom的yaw
     nav_msgs::Odometry visual_odom_; //视觉里程计
     geometry_msgs::PoseStamped drone_target_pose_;
     geometry_msgs::PoseStamped circle_target_pose_;
     quadrotor_msgs::PositionCommand ego_pos_cmd_;
+    std::vector<cv::Rect> rects;
+    SE3Controller se3_controller_;
+    
     void droneFdbUpdate(void); //更新无人机反馈信息
     void circlePosionWorldUpdate(void); //更新障碍圈世界坐标
     void droneStateUpdate(void); //更新无人机状态 主要是最大速度、控制参数
@@ -76,12 +86,16 @@ private:
     void visualOdometryCallBack(const nav_msgs::Odometry& drone_vins_poses);
     void egoPosCmdCallBack(const quadrotor_msgs::PositionCommand& pos_cmds);
     bool droneReachedLocation(cv::Point3f circle_taget,nav_msgs::Odometry fdb,double distance_dxyz);
+    // yolov8_seg yolov8; // 检测类
+    // pose circle_pose; // 位姿解算类
+
 public:
     circleTravelTask(ros::NodeHandle& nh);
     ~circleTravelTask(){}
     circleDetection circle_detection_;
     std::queue<std::pair<std_msgs::Header,std::vector<cv::Mat>>> img_detect_buf_;
     void circleTravelMain(void);
+    void inityoloV8(void); //初始化yolov8
     circleMsg getAdjustmentPoints(cv::Point3f circleWorldDetect,double offSet);
 };
 

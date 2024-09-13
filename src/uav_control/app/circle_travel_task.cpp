@@ -1,5 +1,15 @@
 #include "circle_travel_task.hpp"
 
+// void circleTravelTask::inityoloV8(void)
+// {
+//     std::string sub_type = "s";
+//     std::string cuda_post_process = "c";
+//     std::string wts_name = "../../yolov8/best.wts";
+//     std::string engine_name = "../../yolov8/yolov8s-seg.engine";
+//     yolov8.serialize_engine(wts_name, engine_name, sub_type);
+//     cuda_preprocess_init(kMaxInputImageSize);
+//     yolov8.prepare_buffer(cuda_post_process);
+// }
 
 void circleTravelTask::circleTravelMain(void) {
     if(!airsim_reset_flag_) { 
@@ -32,7 +42,7 @@ void circleTravelTask::circleTravelMain(void) {
         // circlePosionWorldUpdate(); //2.感知障碍圈，更新障碍圈的世界坐标
         droneSetGoalPosion(); //3.更新无人机当前帧的目标点
         droneStateUpdate(); //4.根据当前帧的目标障碍圈更新无人机的控制参数
-        // dronePosionPDControl(); //5.更新无人机PD控制器
+        dronePosionPDControl(); //5.更新无人机PD控制器
     }
 }
 
@@ -48,20 +58,27 @@ circleTravelTask::circleTravelTask(ros::NodeHandle &nh): circle_detection_(nh),a
 }
 
 void circleTravelTask::droneFdbUpdate(void) {
-    // odom update
+    // odom update 使用vins作为无人机的参考位姿
     // ROS_ERROR("circle, x:%f,y:%f,z:%f",circle_msg_true_[circle_num_].pos_world.x,circle_msg_true_[circle_num_].pos_world.y,circle_msg_true_[circle_num_].pos_world.z);
     // ROS_ERROR("ego,x:%f,y:%f,z:%f",drone_target_pose_.pose.position.x,drone_target_pose_.pose.position.y,drone_target_pose_.pose.position.z);
-    // ROS_ERROR("vins, x:%f,y:%f,z:%f",drone_odom_.pose.pose.position.x,drone_odom_.pose.pose.position.y,drone_odom_.pose.pose.position.z);
-    // drone_odom_.pose.pose.position.x = visual_odom_.pose.pose.position.x;
-    // drone_odom_.pose.pose.position.y = visual_odom_.pose.pose.position.y;
-    // drone_odom_.pose.pose.position.z = visual_odom_.pose.pose.position.z;
-    // drone_odom_.pose.pose.orientation = visual_odom_.pose.pose.orientation;
-    drone_odom_.header.frame_id = "world";
-    drone_odom_.pose.pose.position.x = airsim_interface_.drone_poses_true_->pose.position.x;
-    drone_odom_.pose.pose.position.y = -airsim_interface_.drone_poses_true_->pose.position.y;
-    drone_odom_.pose.pose.position.z = -airsim_interface_.drone_poses_true_->pose.position.z;
-    drone_odom_.pose.pose.orientation = airsim_interface_.drone_poses_true_->pose.orientation;
-    drone_odom_pub_.publish(drone_odom_);
+    
+    drone_odom_.pose.pose.position.x = visual_odom_.pose.pose.position.x;
+    drone_odom_.pose.pose.position.y = visual_odom_.pose.pose.position.y;
+    drone_odom_.pose.pose.position.z = visual_odom_.pose.pose.position.z;
+    drone_odom_.pose.pose.orientation = visual_odom_.pose.pose.orientation;
+    Eigen::Quaterniond quaternion_drone_odom(drone_odom_.pose.pose.orientation.w,drone_odom_.pose.pose.orientation.x,
+                                             drone_odom_.pose.pose.orientation.y,drone_odom_.pose.pose.orientation.z);
+    Eigen::Matrix3d rotationMatrix = quaternion_drone_odom.toRotationMatrix();
+    drone_odom_yaw_ = atan2(rotationMatrix(1, 0), rotationMatrix(0, 0));
+    ROS_ERROR("vins, x:%f,y:%f,z:%f, yaw:%f",drone_odom_.pose.pose.position.x,drone_odom_.pose.pose.position.y,drone_odom_.pose.pose.position.z,drone_odom_yaw_);
+    // 使用仿真器真实位姿作为无人机的参考位姿
+    // drone_odom_.header.frame_id = "world";
+    // drone_odom_.pose.pose.position.x = airsim_interface_.drone_poses_true_->pose.position.x;
+    // drone_odom_.pose.pose.position.y = -airsim_interface_.drone_poses_true_->pose.position.y;
+    // drone_odom_.pose.pose.position.z = -airsim_interface_.drone_poses_true_->pose.position.z;
+    // drone_odom_.pose.pose.orientation = airsim_interface_.drone_poses_true_->pose.orientation;
+    
+    // drone_odom_pub_.publish(drone_odom_);
 }
 
 void circleTravelTask::circlePosionWorldUpdate(void) {
@@ -79,16 +96,34 @@ void circleTravelTask::circlePosionWorldUpdate(void) {
         circle_msg_camera = circle_detection_.circleDetectionNewFrame(img_detect,15,250); //20 120为检测阈值 
         sensor_msgs::ImagePtr detect_image_left = cv_bridge::CvImage(img_header, "bgr8", img_detect[0]).toImageMsg();
         detect_left_pub_.publish(detect_image_left); //发布检测到的图像
+
+        // std::string cuda_post_process = "c";
+        // // 推理
+        // auto start = std::chrono::system_clock::now();
+        // cv::Mat mask_ = yolov8.infer(img_detect[0], cuda_post_process, rects);
+        // // 位置解算
+        // std::vector<Eigen::Matrix3d> ellipse_cone_matrix =  circle_pose.get_Q(mask_, img_detect[0]);
+        // // 以Z轴从小到大排序
+        // std::vector<Eigen::Vector3d> poses = circle_pose.standardization(ellipse_cone_matrix);
+
         if(!circle_msg_camera.empty()) { //当前帧下检测到障碍圈
             for(int i = 0; i < circle_msg_camera.size(); i++) {
                 //用矩形框计算xyz坐标 z = sqrt((f^2 * S) / A)  x = (u - c_x) * z / fx    y = (v - c_y) * z / fy
                 //先进行实体圆环面积的估算、利用倾斜度进行估算
                 
                 cv::Point3f pos_yolo; //yolo检测框算出的相机坐标系下圈的位置
+                // pos_yolo.x = poses[i][0];
+                // pos_yolo.y = poses[i][1];
+                // pos_yolo.z = poses[i][2];
+
+
                 double true_square = circle_msg_camera[i].width_max * circle_msg_camera[i].width_max;
+
                 pos_yolo.z = std::sqrt(CAMERA_FX * CAMERA_FY * 1.2 * 1.2 / true_square);
                 pos_yolo.x = (circle_msg_camera[i].camera_center.x - CAMERA_CX ) * pos_yolo.z / CAMERA_FX;
                 pos_yolo.y = (circle_msg_camera[i].camera_center.y - CAMERA_CY ) * pos_yolo.z / CAMERA_FY;
+
+                
                 if(pos_yolo.z < 12.0) { //小于12米的观测才要
                     // // 颜色
                     // cv::Scalar color(255, 0, 0); // 蓝色 (BGR颜色)
@@ -256,20 +291,14 @@ void circleTravelTask::droneSetGoalPosion(void) { //设置无人机目标点
 
     if(abs(drone_target_pose_.pose.position.x) < 250 && abs(drone_target_pose_.pose.position.y) < 250 && abs(drone_target_pose_.pose.position.z) < 45) {
         drone_target_pose_.header.frame_id = "world";
-        ego_goal_point_pub_.publish(drone_target_pose_);  
+        ego_goal_point_pub_.publish(drone_target_pose_);  //发布ego-planner规划器目标路点
+
         circle_target_pose_.header.frame_id = "world";
         circle_pos_world_pub_.publish(circle_target_pose_); 
         // ROS_ERROR("ego,x:%f,y:%f,z:%f",drone_target_pose_.pose.position.x,drone_target_pose_.pose.position.y,drone_target_pose_.pose.position.z);
+        // ROS_ERROR("ego,x:%f,y:%f,z:%f",drone_target_pose_.pose.position.x,drone_target_pose_.pose.position.y,drone_target_pose_.pose.position.z);
     }
-    // ROS_ERROR("x:%f, y:%f, z:%f",drone_target_pose_.pose.position.x,drone_target_pose_.pose.position.y,drone_target_pose_.pose.position.z);
-    double dx = drone_target_pose_.pose.position.x - drone_odom_.pose.pose.position.x;
-    double dy = drone_target_pose_.pose.position.y - drone_odom_.pose.pose.position.y;
-    double dz = drone_target_pose_.pose.position.z - drone_odom_.pose.pose.position.z;
-    double posecmd_yaw = std::atan2(dy, dx);
-
-    airsim_interface_.airsimSetGoalPosition(drone_target_pose_.pose.position.x,drone_target_pose_.pose.position.y,
-                                            drone_target_pose_.pose.position.z,posecmd_yaw);
-                                      
+    // ROS_ERROR("x:%f, y:%f, z:%f",drone_target_pose_.pose.position.x,drone_target_pose_.pose.position.y,drone_target_pose_.pose.position.z);                       
 }
 
 //更新无人机状态 根据目标圈的长宽、倾斜度改变无人机的最大速度、控制参数
@@ -328,18 +357,99 @@ void circleTravelTask::droneStateUpdate(void){
 }
 
 void circleTravelTask::dronePosionPDControl(void) { //无人机位置PD控制 
-    if(ego_init_flag_) { //ego初始化完成后，调用PD控制器
-        airsim_interface_.airsimSetGoalPosition(ego_pos_cmd_.position.x,ego_pos_cmd_.position.y,
-                                                ego_pos_cmd_.position.z,ego_pos_cmd_.yaw);
-        if (adjust_flag_ == true)
-        {
-           airsim_interface_.airsimSetGoalPosition(ego_pos_cmd_.position.x,ego_pos_cmd_.position.y,
-                                                   ego_pos_cmd_.position.z,target_pd_yaw);
-        }
+    // if(ego_init_flag_) { //ego初始化完成后，调用PD控制器
+    //     airsim_interface_.airsimSetGoalPosition(ego_pos_cmd_.position.x,ego_pos_cmd_.position.y,
+    //                                             ego_pos_cmd_.position.z,ego_pos_cmd_.yaw);
+    //     if (adjust_flag_ == true) {
+    //        airsim_interface_.airsimSetGoalPosition(ego_pos_cmd_.position.x,ego_pos_cmd_.position.y,
+    //                                                ego_pos_cmd_.position.z,target_pd_yaw);
+    //     }
+    // }
+
+    
+    // 不使用ego-planner 直接用目标值飞
+    // double dx = drone_target_pose_.pose.position.x - drone_odom_.pose.pose.position.x;
+    // double dy = drone_target_pose_.pose.position.y - drone_odom_.pose.pose.position.y;
+    // double dz = drone_target_pose_.pose.position.z - drone_odom_.pose.pose.position.z;
+    // double posecmd_yaw = std::atan2(dy, dx);
+    // // 调用 PD控制器控制无人机运动
+    // airsim_interface_.airsimSetGoalPosition(drone_target_pose_.pose.position.x,drone_target_pose_.pose.position.y,
+    //                                         drone_target_pose_.pose.position.z,posecmd_yaw);
+
+    static ros::Time last_time;
+    ros::Time current_time = ros::Time::now();
+    ros::Duration period = current_time - last_time;
+    last_time = current_time;
+    double dt = period.toSec() ;  //大约是0.05s 20Hz
+
+    static quadrotor_msgs::PositionCommand last_ego_cmd;
+    if(ego_init_flag_) {
+        // SE3-Control
+        
+        Desired_State_t ego_desired_state;
+        ego_desired_state.p.x() = ego_pos_cmd_.position.x;
+        ego_desired_state.p.y() = ego_pos_cmd_.position.y;
+        ego_desired_state.p.z() = ego_pos_cmd_.position.z;
+        ego_desired_state.v.x() = ego_pos_cmd_.velocity.x;
+        ego_desired_state.v.y() = ego_pos_cmd_.velocity.y;
+        ego_desired_state.v.z() = ego_pos_cmd_.velocity.z;
+        ego_desired_state.a.x() = ego_pos_cmd_.acceleration.x;
+        ego_desired_state.a.y() = ego_pos_cmd_.acceleration.y;
+        ego_desired_state.a.z() = ego_pos_cmd_.acceleration.z;
+        ego_desired_state.jerk.x() = (ego_pos_cmd_.acceleration.x - last_ego_cmd.acceleration.x) / dt;
+        ego_desired_state.jerk.y() = (ego_pos_cmd_.acceleration.y - last_ego_cmd.acceleration.y) / dt;
+        ego_desired_state.jerk.z() = (ego_pos_cmd_.acceleration.z - last_ego_cmd.acceleration.z) / dt;
+        // ROS_ERROR("pos:   x:%f,  y:%f,  z:%f ",ego_pos_cmd_.position.x,ego_pos_cmd_.position.y,ego_pos_cmd_.position.z);
+        // ROS_ERROR("acc:   x:%f,  y:%f,  z:%f ",ego_desired_state.a.x(),ego_desired_state.a.y(),ego_desired_state.a.z());
+        // ROS_ERROR("jerk:   x:%f,  y:%f,  z:%f ",ego_desired_state.jerk.x(),ego_desired_state.jerk.y(),ego_desired_state.jerk.z());
+        ego_desired_state.yaw = -ego_pos_cmd_.yaw;
+        ego_desired_state.head_rate = -ego_pos_cmd_.yaw_dot;
+        // ROS_ERROR("yaw_rate:%f",ego_desired_state.head_rate);
+        Odom_Data_t ego_odom;
+        ego_odom.p.x() = visual_odom_.pose.pose.position.x;
+        ego_odom.p.y() = visual_odom_.pose.pose.position.y;
+        ego_odom.p.z() = visual_odom_.pose.pose.position.z;
+        ego_odom.v.x() = visual_odom_.twist.twist.linear.x;
+        ego_odom.v.y() = visual_odom_.twist.twist.linear.y;
+        ego_odom.v.z() = visual_odom_.twist.twist.linear.z;
+        ego_odom.q.x() = visual_odom_.pose.pose.orientation.x;
+        ego_odom.q.y() = visual_odom_.pose.pose.orientation.y;
+        ego_odom.q.z() = visual_odom_.pose.pose.orientation.z;
+        ego_odom.q.w() = visual_odom_.pose.pose.orientation.w;
+
+        
+
+        ego_odom.w.x() = visual_odom_.twist.twist.angular.x;
+        ego_odom.w.y() = visual_odom_.twist.twist.angular.y;
+        ego_odom.w.z() = visual_odom_.twist.twist.angular.z;
+
+        // ROS_ERROR("yaw:  target:%f,  odom:%f",ego_desired_state.yaw,drone_odom_yaw_);
+        // ego_odom.w.x() = 1.0f;
+        // ego_odom.w.y() = 1.0f;
+        // ego_odom.w.z() = 1.0f;
+        // ROS_ERROR("odom_v:   x:%f,  y:%f,  z:%f ",ego_odom.v.x(),ego_odom.v.y(),ego_odom.v.z());
+        // ROS_ERROR("odom_w:   x:%f,  y:%f,  z:%f ",ego_odom.w.x(),ego_odom.w.y(),ego_odom.w.z());
+        Controller_Output_t se3_output;
+        se3_controller_.update(ego_desired_state,ego_odom,se3_output);
+        Eigen::Vector3d angle_rate;
+        angle_rate.x() = -se3_output.pitch_rate ;
+        angle_rate.y() = -se3_output.roll_rate ; 
+        angle_rate.z() = -se3_output.yaw_rate;
+        // ROS_ERROR("thrust:%f,  yaw_rate:%f,  pitch_rate:%f,  roll_rate:%f",se3_output.thrust,angle_rate.z(),angle_rate.x(),angle_rate.y());
+        // airsim_interface_.airsimAngleRateThrottleCtrl(se3_output.thrust,angle_rate);
+        angle_rate.x() = -0.0f; //pitch正数向后飞
+        angle_rate.y() = 0.1f;  //roll正数向右飞
+        angle_rate.z() = 0.0f;
+        airsim_interface_.airsimAngleRateThrottleCtrl(0.6,angle_rate);
+
+        // Eigen::Vector3d zero = Eigen::Vector3d::Zero();
+        // airsim_interface_.airsimAngleRateThrottleCtrl(0.6,zero);
+        last_ego_cmd = ego_pos_cmd_;
     }
+    
 }
 
-int circleTravelTask::findClosestCircleNum(cv::Point3f circle_pos) {
+int circleTravelTask::findClosestCircleNum(cv::Point3f circle_pos) {         
     int closest_index = -1; // 初始化为无效值
     double minx_distance = 7.0; // 初始化为大于4米的值
     double miny_distance = 7.0;
@@ -411,13 +521,7 @@ void circleTravelTask::visualOdometryCallBack(const nav_msgs::Odometry& drone_vi
 }
 
 void circleTravelTask::egoPosCmdCallBack(const quadrotor_msgs::PositionCommand& ego_pos_cmd) {
-    ego_pos_cmd_.position.x = ego_pos_cmd.position.x;
-    ego_pos_cmd_.position.y = ego_pos_cmd.position.y;
-    ego_pos_cmd_.position.z = ego_pos_cmd.position.z;
-    ego_pos_cmd_.yaw = ego_pos_cmd.yaw;
-    ego_pos_cmd_.velocity.x = ego_pos_cmd.velocity.x;
-    ego_pos_cmd_.velocity.y = ego_pos_cmd.velocity.y;
-    ego_pos_cmd_.velocity.z = ego_pos_cmd.velocity.z;
+    ego_pos_cmd_ = ego_pos_cmd;
     ego_init_flag_ = true;
 }
 

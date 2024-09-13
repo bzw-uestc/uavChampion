@@ -9,7 +9,7 @@ find_package(OpenCV 4.5.5 REQUIRED)
 find_package(CUDA REQUIRED)
 message(--------------------------------------------------${OpenCV_INCLUDE_DIRS})
 message(--------------------------------------------------${CUDA_INCLUDE_DIRS})
-
+enable_language(CUDA)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -139,9 +139,13 @@ include_directories(
   ${CUDA_INCLUDE_DIRS}
   ${tensorRT_DIR}/include
   ${onnxruntime_DIR}/include
-  include)
+  include
+  /home/uestc/bzw_ws/uavChampion/src/yolov8/include
+  /home/uestc/bzw_ws/uavChampion/src/yolov8/plugin/
+  )
 
-#tensorRT
+  message(++++++++++++++++++++++++++++++++++++++++++++++++++-------------------${PROJECT_SOURCE_DIR})
+  #tensorRT
 link_directories(${tensorRT_DIR}/lib)
 # onnx
 link_directories(${onnxruntime_DIR}/lib)
@@ -159,8 +163,15 @@ link_directories(${onnxruntime_DIR}/lib)
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_node src/rosNodeMain.cpp app/circle_travel_task.cpp app/yoloV5.cpp app/deep.cpp app/coex.cpp 
-app/circle_detection.cpp app/airsim_interface.cpp)
+cuda_add_executable(${PROJECT_NAME}_node src/rosNodeMain.cpp app/circle_travel_task.cpp app/yoloV5.cpp app/deep.cpp app/coex.cpp 
+app/circle_detection.cpp app/airsim_interface.cpp app/controller.cpp ../yolov8/src/pose.cpp ../yolov8/src/yolov8_.cpp 
+../yolov8/src/block.cpp ../yolov8/src/calibrator.cpp ../yolov8/src/model.cpp ../yolov8/src/postprocess.cpp 
+../yolov8/src/preprocess.cu 
+../yolov8/src/postprocess.cu
+) 
+
+add_library(myplugins_1 SHARED ../yolov8/plugin/yololayer.cu)
+target_link_libraries(myplugins_1 nvinfer cudart)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -181,6 +192,7 @@ target_link_libraries(${PROJECT_NAME}_node
    nvinfer_plugin
    onnxruntime
    cudart
+   myplugins_1
  )
 
 # add_subdirectory("deep_image/StereoAlgorithms")

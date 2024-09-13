@@ -3,8 +3,8 @@
 
 #include <ros/ros.h>
 
-#include <uav_utils/converters.h>
-#include <uav_utils/geometry_utils.h>
+#include "converters.h"
+#include "geometry_utils.h"
 
 namespace uav_utils
 {
