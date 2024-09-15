@@ -30,19 +30,19 @@
 
 #define ODOM_INIT_TIME 2
 
-#define MAX_VEL_FAST_FAST 1.0
-#define MAX_VEL_FAST 1.0
-#define MAX_VEL_MID 1.0
-#define MAX_VEL_SLOW 1.0
+#define MAX_VEL_FAST_FAST 1.5
+#define MAX_VEL_FAST 1.5
+#define MAX_VEL_MID 1.5
+#define MAX_VEL_SLOW 1.5
 
 // #define MAX_VEL_FAST_FAST 7.0
 // #define MAX_VEL_FAST 5.0
 // #define MAX_VEL_MID 3.0
 // #define MAX_VEL_SLOW 1.5
 
-#define MAX_ACC_FAST_FAST 3.0     
-#define MAX_ACC_FAST 3.0
-#define MAX_ACC_NORMAL 3.0
+#define MAX_ACC_FAST_FAST 5.0     
+#define MAX_ACC_FAST 5.0
+#define MAX_ACC_NORMAL 5.0
 
 #define CAMERA_FX 320
 #define CAMERA_FY 320
@@ -68,7 +68,7 @@ private:
     int circle_num_ = 0; //记录当前在第几个障碍圈
     double target_pd_yaw = 0.0;
     nav_msgs::Odometry drone_odom_; //无人机使用的odom
-    double drone_odom_yaw_; //无人机odom的yaw
+    double drone_odom_yaw_,drone_odom_pitch_,drone_odom_roll_; //无人机odom的欧拉角
     nav_msgs::Odometry visual_odom_; //视觉里程计
     geometry_msgs::PoseStamped drone_target_pose_;
     geometry_msgs::PoseStamped circle_target_pose_;

@@ -56,6 +56,12 @@ void SE3Controller::update(const Desired_State_t& des, const Odom_Data_t& odom,
 	u.thrust = u.thrust >= fullparam ? fullparam:u.thrust;
 
   const Eigen::Quaterniond desired_attitude = computeDesiredAttitude(F_des/param_.mass, des.yaw,odom.q);
+  Eigen::Matrix3d rotationMatrix = desired_attitude.toRotationMatrix();
+  double yaw = atan2(rotationMatrix(1, 0), rotationMatrix(0, 0));
+  double roll = atan2(rotationMatrix(2, 1), rotationMatrix(2, 2));  // roll: atan2(r32, r33)
+  double pitch = asin(-rotationMatrix(2, 0));
+
+  ROS_ERROR("desired, yaw:%f, pitch:%f, roll:%f",yaw,pitch,roll);
 	const Eigen::Vector3d feedback_bodyrates = computeFeedBackControlBodyrates(desired_attitude,odom.q);
 	u.roll_rate = reference_inputs.roll_rate + feedback_bodyrates.x();
 	u.pitch_rate = reference_inputs.pitch_rate + feedback_bodyrates.y();

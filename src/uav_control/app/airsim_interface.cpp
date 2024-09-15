@@ -70,8 +70,8 @@ std::vector<circleMsg> airsimInterface::airsimGetCirclePosTrue(void) {
 void airsimInterface::airsimAngleRateThrottleCtrl(const double throttle,const Eigen::Vector3d& angle_rate) {
     airsim_ros::AngleRateThrottle angleRateThrottle_cmd;
     angleRateThrottle_cmd.throttle = throttle;
-    angleRateThrottle_cmd.pitchRate = angle_rate.x();
-    angleRateThrottle_cmd.rollRate = angle_rate.y();
+    angleRateThrottle_cmd.rollRate = angle_rate.x();
+    angleRateThrottle_cmd.pitchRate = angle_rate.y();
     angleRateThrottle_cmd.yawRate = angle_rate.z();
     drone_angle_rate_throttle_pub_.publish(angleRateThrottle_cmd);
 }
