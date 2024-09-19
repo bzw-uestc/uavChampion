@@ -3,7 +3,7 @@
 #include "../../utils/uav_utils/include/uav_utils/utils.h"
 
 void SE3Controller::update(const Desired_State_t& des, const Odom_Data_t& odom, 
-		                   Controller_Output_t& u) 
+		                       Controller_Output_t& u) 
 {
   Controller_Output_t reference_inputs;
   reference_inputs = computeNominalReferenceInputs(des, odom);
@@ -56,17 +56,18 @@ void SE3Controller::update(const Desired_State_t& des, const Odom_Data_t& odom,
 	u.thrust = u.thrust >= fullparam ? fullparam:u.thrust;
 
   const Eigen::Quaterniond desired_attitude = computeDesiredAttitude(F_des/param_.mass, des.yaw,odom.q);
-  Eigen::Matrix3d rotationMatrix = desired_attitude.toRotationMatrix();
-  double yaw = atan2(rotationMatrix(1, 0), rotationMatrix(0, 0));
-  double roll = atan2(rotationMatrix(2, 1), rotationMatrix(2, 2));  // roll: atan2(r32, r33)
-  double pitch = asin(-rotationMatrix(2, 0));
-
-  ROS_ERROR("desired, yaw:%f, pitch:%f, roll:%f",yaw,pitch,roll);
-	const Eigen::Vector3d feedback_bodyrates = computeFeedBackControlBodyrates(desired_attitude,odom.q);
+  // Eigen::Matrix3d rotationMatrix = desired_attitude.toRotationMatrix();
+  // double yaw = atan2(rotationMatrix(1, 0), rotationMatrix(0, 0));
+  // double roll = atan2(rotationMatrix(2, 1), rotationMatrix(2, 2));  // roll: atan2(r32, r33)
+  // double pitch = asin(-rotationMatrix(2, 0));
+  // ROS_ERROR("desired, yaw:%f, pitch:%f, roll:%f",yaw,pitch,roll);
+  
+	Eigen::Vector3d feedback_bodyrates = computeFeedBackControlBodyrates(desired_attitude,odom.q);
+  feedback_bodyrates = Eigen::Vector3d::Zero();
 	u.roll_rate = reference_inputs.roll_rate + feedback_bodyrates.x();
 	u.pitch_rate = reference_inputs.pitch_rate + feedback_bodyrates.y();
 	u.yaw_rate = reference_inputs.yaw_rate + feedback_bodyrates.z();
-	// ROS_INFO_STREAM("roll_rate: "<<u.roll_rate);
+	// ROS_INFO_STREAM("roll_rate: "<< u.roll_rate);
 	double limit_rate = 6*3.14;
 	if(u.roll_rate >= limit_rate)
 		ROS_INFO("ROLL RATE LIMIT!");
@@ -78,9 +79,119 @@ void SE3Controller::update(const Desired_State_t& des, const Odom_Data_t& odom,
 	uav_utils::limit_range(u.yaw_rate,1.5);
 }
 
+void SE3Controller::update2(const Desired_State_t& des, const Odom_Data_t& odom, 
+		                        Controller_Output_t& u) 
+{
+  std::string constraint_info("");
+  Eigen::Vector3d e_p,e_v,F_des;
+  double e_yaw = 0.0;
+
+  // 积分分离
+  if (des.v(0) != 0.0 || des.v(1) != 0.0 || des.v(2) != 0.0) {
+		// ROS_INFO("Reset integration");
+		int_e_v_.setZero();
+	}
+
+  double yaw_curr = uav_utils::get_yaw_from_quaternion(odom.q);
+	double yaw_des = des.yaw;
+	Eigen::Matrix3d wRc = uav_utils::rotz(yaw_curr);
+	Eigen::Matrix3d cRw = wRc.transpose();
+  e_p = des.p - odom.p;
+	Eigen::Vector3d u_p = wRc * param_.Kp * cRw * e_p;
+	
+	e_v = des.v + u_p - odom.v;
+
+  const std::vector<double> integration_enable_limits = {0.1, 0.1, 0.1};
+	for (size_t k = 0; k < 3; ++k) {
+		if (std::fabs(e_v(k)) < 0.2) {
+			int_e_v_(k) += e_v(k) * 1.0 / 50.0;
+		}
+	}
+
+  Eigen::Vector3d u_v_p = wRc * param_.Kv * cRw * e_v;
+	const std::vector<double> integration_output_limits = {0.4, 0.4, 0.4};
+	Eigen::Vector3d u_v_i = wRc * param_.Kvi * cRw * int_e_v_;
+	for (size_t k = 0; k < 3; ++k) {
+		if (std::fabs(u_v_i(k)) > integration_output_limits[k]) {
+			uav_utils::limit_range(u_v_i(k), integration_output_limits[k]);
+			ROS_INFO("Integration saturate for axis %zu, value=%.3f", k, u_v_i(k));
+		}
+	}
+
+  Eigen::Vector3d u_v = u_v_p + u_v_i;
+
+	e_yaw = yaw_des - yaw_curr;
+
+	while(e_yaw > M_PI) e_yaw -= (2 * M_PI);
+	while(e_yaw < -M_PI) e_yaw += (2 * M_PI);
+
+	double u_yaw = param_.Kyaw * e_yaw;
+
+  F_des = u_v * param_.mass + 
+		Eigen::Vector3d(0, 0, param_.mass * param_.gra) + param_.Ka * param_.mass * des.a;
+	
+	if (F_des(2) < 0.5 * param_.mass * param_.gra)
+	{
+		F_des = F_des / F_des(2) * (0.5 * param_.mass * param_.gra);
+	}
+	else if (F_des(2) > 2 * param_.mass * param_.gra)
+	{
+		F_des = F_des / F_des(2) * (2 * param_.mass * param_.gra);
+	}
+
+	if (std::fabs(F_des(0)/F_des(2)) > std::tan(uav_utils::toRad(50.0)))
+	{
+		F_des(0) = F_des(0)/std::fabs(F_des(0)) * F_des(2) * std::tan(uav_utils::toRad(30.0));
+	}
+
+	if (std::fabs(F_des(1)/F_des(2)) > std::tan(uav_utils::toRad(50.0)))
+	{
+		F_des(1) = F_des(1)/std::fabs(F_des(1)) * F_des(2) * std::tan(uav_utils::toRad(30.0));	
+	}
+
+  Eigen::Vector3d z_b_des = F_des / F_des.norm();
+  // Z-Y-X Rotation Sequence                
+	Eigen::Vector3d y_c_des = Eigen::Vector3d(-std::sin(yaw_des), std::cos(yaw_des), 0.0);
+	Eigen::Vector3d x_b_des = y_c_des.cross(z_b_des) / y_c_des.cross(z_b_des).norm();
+	Eigen::Vector3d y_b_des = z_b_des.cross(x_b_des);
+
+  Eigen::Matrix3d R_des1; // it's wRb
+	R_des1 << x_b_des, y_b_des, z_b_des;
+	
+	Eigen::Matrix3d R_des2; // it's wRb
+	R_des2 << -x_b_des, -y_b_des, z_b_des;
+	
+	Eigen::Vector3d e1 = uav_utils::R_to_ypr(R_des1.transpose() * odom.q.toRotationMatrix());
+	Eigen::Vector3d e2 = uav_utils::R_to_ypr(R_des2.transpose() * odom.q.toRotationMatrix());
+
+	Eigen::Matrix3d R_des; // it's wRb
+
+	if (e1.norm() < e2.norm())
+	{
+		R_des = R_des1;
+	}
+	else
+	{
+		R_des = R_des2;
+	}
+
+  Eigen::Vector3d F_c = wRc.transpose() * F_des;
+  Eigen::Matrix3d wRb_odom = odom.q.toRotationMatrix();
+  Eigen::Vector3d z_b_curr = wRb_odom.col(2);
+  double u1 = F_des.dot(z_b_curr);
+  double fx = F_c(0);
+  double fy = F_c(1);
+  double fz = F_c(2);
+  u.roll  = std::atan2(-fy, fz);
+  u.pitch = std::atan2( fx, fz);
+  u.yaw = des.yaw;
+  u.thrust = u1 / param_.full_thrust;
+  
+}
+
 Controller_Output_t SE3Controller::computeNominalReferenceInputs(
   const Desired_State_t& reference_state,
-  const Odom_Data_t& attitude_estimate) const {
+  const Odom_Data_t& attitude_estimate){
   
   Controller_Output_t reference_command;
   // 根据期望yaw航向构建坐标轴C
@@ -93,6 +204,13 @@ Controller_Output_t SE3Controller::computeNominalReferenceInputs(
   // 求期望姿态
   const Eigen::Quaterniond q_W_B = computeDesiredAttitude(
     des_acc, reference_state.yaw, attitude_estimate.q);
+
+  Eigen::Matrix3d rotationMatrix = q_W_B.toRotationMatrix();
+  desire_yaw_ = atan2(rotationMatrix(1, 0), rotationMatrix(0, 0)) * 57.3f;
+  desire_roll_ = atan2(rotationMatrix(2, 1), rotationMatrix(2, 2)) * 57.3f;  // roll: atan2(r32, r33)
+  desire_pitch_ = asin(-rotationMatrix(2, 0)) * 57.3f;
+  ROS_ERROR("des, yaw:%f, pitch:%f, roll:%f",desire_yaw_,desire_pitch_,desire_roll_);
+
   const Eigen::Vector3d x_B = q_W_B * Eigen::Vector3d::UnitX();
   const Eigen::Vector3d y_B = q_W_B * Eigen::Vector3d::UnitY();
   const Eigen::Vector3d z_B = q_W_B * Eigen::Vector3d::UnitZ();
@@ -103,6 +221,7 @@ Controller_Output_t SE3Controller::computeNominalReferenceInputs(
   reference_command.normalized_thrust = des_acc.norm();
   // Reference body rates
   if (almostZeroThrust(reference_command.normalized_thrust)) {
+    ROS_ERROR("almost_zero_thrust");
     reference_command.roll_rate = 0.0;
     reference_command.pitch_rate = 0.0;
   } 

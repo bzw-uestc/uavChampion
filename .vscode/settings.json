@@ -91,6 +91,10 @@
         "future": "cpp",
         "alignedvector3": "cpp",
         "fft": "cpp",
-        "csetjmp": "cpp"
+        "csetjmp": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "ranges": "cpp",
+        "stop_token": "cpp"
     }
 }

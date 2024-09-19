@@ -272,7 +272,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Image
       Enabled: false
-      Image Topic: /drone_0/depth
+      Image Topic: /airsim_node/drone_1/front_left/Scene
       Max Value: 1
       Median window: 5
       Min Value: 0
@@ -400,17 +400,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 5.590756893157959
-        Y: -2.401402711868286
-        Z: 1.1779493434005417e-05
+        X: 6.050784111022949
+        Y: -0.10219931602478027
+        Z: 1.3026076885580551e-05
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.24979770183563232
+      Pitch: 0.2447977215051651
       Target Frame: <Fixed Frame>
-      Yaw: 2.9847609996795654
+      Yaw: 2.749760389328003
     Saved:
       - Class: rviz/FPS
         Enable Stereo Rendering:

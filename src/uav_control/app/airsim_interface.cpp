@@ -8,6 +8,7 @@ airsimInterface::airsimInterface(ros::NodeHandle &nh) {
     sim_takeoff_client_ = nh.serviceClient<airsim_ros::Takeoff>("/airsim_node/drone_1/takeoff");
     set_goal_position_client_ = nh.serviceClient<airsim_ros::SetLocalPosition>("/airsim_node/local_position_goal/override");
     drone_angle_rate_throttle_pub_ = nh.advertise<airsim_ros::AngleRateThrottle>("/airsim_node/drone_1/angle_rate_throttle_frame",1);
+    drone_attitude_throttle_pub_ = nh.advertise<airsim_ros::PoseCmd>("/airsim_node/drone_1/pose_cmd_body_frame",1);
 }
 
 bool airsimInterface::airsimReset(void) {
@@ -74,6 +75,15 @@ void airsimInterface::airsimAngleRateThrottleCtrl(const double throttle,const Ei
     angleRateThrottle_cmd.pitchRate = angle_rate.y();
     angleRateThrottle_cmd.yawRate = angle_rate.z();
     drone_angle_rate_throttle_pub_.publish(angleRateThrottle_cmd);
+}
+
+void airsimInterface::airsimAttitudeThrottleCtrl(const Attitude_Throttle_t cmd) {
+    airsim_ros::PoseCmd attitude_throttle_cmd;
+    attitude_throttle_cmd.yaw = cmd.yaw;
+    attitude_throttle_cmd.pitch = cmd.pitch;
+    attitude_throttle_cmd.roll = cmd.roll;
+    attitude_throttle_cmd.throttle = cmd.throttle;
+    drone_attitude_throttle_pub_.publish(attitude_throttle_cmd);
 }
 
 void airsimInterface::dronePosesTrueCallBack(const geometry_msgs::PoseStampedConstPtr& drone_poses) {

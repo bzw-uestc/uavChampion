@@ -3,7 +3,6 @@
 
 #include <Eigen/Dense>
 #include <tf/transform_datatypes.h>
-
 #include "CtrlParam.h"
 
 
@@ -70,7 +69,7 @@ private:
 	double Kyaw_;
     Controller_Output_t computeNominalReferenceInputs(
         const Desired_State_t& reference_state,
-        const Odom_Data_t& attitude_estimate) const;
+        const Odom_Data_t& attitude_estimate);
 
     Eigen::Quaterniond computeDesiredAttitude(
         const Eigen::Vector3d& desired_acceleration, const double& reference_heading,
@@ -90,31 +89,36 @@ private:
     bool almostZeroThrust(const double thrust_value) const;
 public:
     SE3Controller() {
-        param_.mass = 0.8f;
+        param_.mass = 1.0f;
         param_.gra = 9.8f;
         param_.Kp.setZero();
         param_.Kv.setZero();
         param_.Ka.setZero();
         param_.Kvi.setZero();
-        param_.Kp(0,0) = 1.0f;
-        param_.Kp(1,1) = 1.0f;
-        param_.Kp(2,2) = 1.0f;
-        param_.Kv(0,0) = 1.0f;
-        param_.Kv(1,1) = 1.0f;
-        param_.Kv(2,2) = 1.0f;
-        param_.Kvi(0,0) = 0.0f;
-        param_.Kvi(1,1) = 0.0f;
-        param_.Kvi(2,2) = 0.0f;
+        param_.Kp(0,0) = 3.0f;  //x
+        param_.Kp(1,1) = 3.0f;  //y
+        param_.Kp(2,2) = 3.0f;  //z
+        param_.Kv(0,0) = 2.0f;
+        param_.Kv(1,1) = 2.0f;
+        param_.Kv(2,2) = 2.0f;
+        param_.Kvi(0,0) = 0.3f;
+        param_.Kvi(1,1) = 0.3f;
+        param_.Kvi(2,2) = 0.3f;
         param_.Ka(0,0) = 1.0f;
         param_.Ka(1,1) = 1.0f;
         param_.Ka(2,2) = 1.0f;
-        param_.Kyaw = 1.0f;
+        param_.Kyaw = 20.0f;
+        // param_.track_Kyaw = 10.0f;
+        // param_.track_Krp = 30.0f;
         param_.hov_percent = 0.6;
         param_.full_thrust = param_.mass * param_.gra / param_.hov_percent;
     };
     ~SE3Controller() {};
     void update(const Desired_State_t& des, const Odom_Data_t& odom, 
 		        Controller_Output_t& u);
+    void update2(const Desired_State_t& des, const Odom_Data_t& odom, 
+		        Controller_Output_t& u);
+    float desire_yaw_,desire_pitch_,desire_roll_;
     
 };
 

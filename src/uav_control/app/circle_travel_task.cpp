@@ -55,6 +55,12 @@ circleTravelTask::circleTravelTask(ros::NodeHandle &nh): circle_detection_(nh),a
     drone_max_vel_pub_ = nh.advertise<std_msgs::Float64>("/drone_1/max_vel",10); //max vel to pd and ego
     drone_max_acc_pub_ = nh.advertise<std_msgs::Float64>("/drone_1/max_acc",10); //max vel to pd and ego
     drone_odom_pub_ = nh.advertise<nav_msgs::Odometry>("/drone_true_odom",10);
+    desire_yaw_pub_ = nh.advertise<std_msgs::Float64>("/desire_yaw",10);
+    desire_pitch_pub_ = nh.advertise<std_msgs::Float64>("/desire_pitch",10);
+    desire_roll_pub_ = nh.advertise<std_msgs::Float64>("/desire_roll",10);
+    odom_yaw_pub_ = nh.advertise<std_msgs::Float64>("/odom_yaw",10);
+    odom_pitch_pub_ = nh.advertise<std_msgs::Float64>("/odom_pitch",10);
+    odom_roll_pub_ = nh.advertise<std_msgs::Float64>("/odom_roll",10);
 }
 
 void circleTravelTask::droneFdbUpdate(void) {
@@ -62,12 +68,12 @@ void circleTravelTask::droneFdbUpdate(void) {
     // ROS_ERROR("circle, x:%f,y:%f,z:%f",circle_msg_true_[circle_num_].pos_world.x,circle_msg_true_[circle_num_].pos_world.y,circle_msg_true_[circle_num_].pos_world.z);
     // ROS_ERROR("ego,x:%f,y:%f,z:%f",drone_target_pose_.pose.position.x,drone_target_pose_.pose.position.y,drone_target_pose_.pose.position.z);
     
-    drone_odom_.pose.pose.position.x = -visual_odom_.pose.pose.position.y;
-    drone_odom_.pose.pose.position.y = visual_odom_.pose.pose.position.x; //坐标系
+    drone_odom_.pose.pose.position.x = visual_odom_.pose.pose.position.x;
+    drone_odom_.pose.pose.position.y = visual_odom_.pose.pose.position.y; //坐标系
     drone_odom_.pose.pose.position.z = visual_odom_.pose.pose.position.z;
     
-    drone_odom_.twist.twist.linear.x = -visual_odom_.twist.twist.linear.y;
-    drone_odom_.twist.twist.linear.y = visual_odom_.twist.twist.linear.x;
+    drone_odom_.twist.twist.linear.x = visual_odom_.twist.twist.linear.x;
+    drone_odom_.twist.twist.linear.y = visual_odom_.twist.twist.linear.y;
     drone_odom_.twist.twist.linear.z = visual_odom_.twist.twist.linear.z;
     
     drone_odom_.twist.twist.angular.x = visual_odom_.twist.twist.angular.x;
@@ -76,18 +82,36 @@ void circleTravelTask::droneFdbUpdate(void) {
 
     drone_odom_.pose.pose.orientation.w = visual_odom_.pose.pose.orientation.w;
     drone_odom_.pose.pose.orientation.x = -visual_odom_.pose.pose.orientation.x;
-    drone_odom_.pose.pose.orientation.y = -visual_odom_.pose.pose.orientation.y;
-    drone_odom_.pose.pose.orientation.z = -visual_odom_.pose.pose.orientation.z;
+    drone_odom_.pose.pose.orientation.y = visual_odom_.pose.pose.orientation.y;
+    drone_odom_.pose.pose.orientation.z = visual_odom_.pose.pose.orientation.z;
 
     Eigen::Quaterniond quaternion_drone_odom(drone_odom_.pose.pose.orientation.w,drone_odom_.pose.pose.orientation.x,
                                              drone_odom_.pose.pose.orientation.y,drone_odom_.pose.pose.orientation.z);
     Eigen::Matrix3d rotationMatrix = quaternion_drone_odom.toRotationMatrix();
-    drone_odom_yaw_ = atan2(rotationMatrix(1, 0), rotationMatrix(0, 0));
-    drone_odom_roll_ = atan2(rotationMatrix(2, 1), rotationMatrix(2, 2));  // roll: atan2(r32, r33)
-    drone_odom_pitch_ = asin(-rotationMatrix(2, 0));
-    ROS_ERROR("vins, x:%f,y:%f,z:%f",drone_odom_.pose.pose.position.x,drone_odom_.pose.pose.position.y,drone_odom_.pose.pose.position.z);
-    ROS_ERROR("vins, yaw:%f, pitch:%f, roll:%f",drone_odom_yaw_,drone_odom_pitch_,drone_odom_roll_);
+    drone_odom_euler_.z() = atan2(rotationMatrix(1, 0), rotationMatrix(0, 0)) * 57.3f;
+    drone_odom_euler_.x() = atan2(rotationMatrix(2, 1), rotationMatrix(2, 2)) * 57.3f;  // roll: atan2(r32, r33)
+    drone_odom_euler_.y() = asin(-rotationMatrix(2, 0)) * 57.3f;
+    // ROS_ERROR("vins, x:%f,y:%f,z:%f",drone_odom_.pose.pose.position.x,drone_odom_.pose.pose.position.y,drone_odom_.pose.pose.position.z);
+    // ROS_ERROR("vins__, yaw:%f, pitch:%f, roll:%f",drone_odom_euler_.z(),drone_odom_euler_.y(),drone_odom_euler_.x());
 
+    // std_msgs::Float64 desire_yaw,desire_pitch,desire_roll;
+    // desire_yaw.data = se3_controller_.desire_yaw_;
+    // desire_pitch.data = se3_controller_.desire_pitch_;
+    // desire_roll.data = se3_controller_.desire_roll_ ;
+
+    // desire_yaw_pub_.publish(desire_yaw);
+    // desire_roll_pub_.publish(desire_pitch);
+    // desire_pitch_pub_.publish(desire_roll);
+
+    // std_msgs::Float64 odom_yaw,odom_pitch,odom_roll;
+    // odom_yaw.data = drone_odom_euler_.z() * 57.3f;
+    // odom_pitch.data = drone_odom_euler_.y() * 57.3f;
+    // odom_roll.data = drone_odom_euler_.x() * 57.3f;
+
+    // odom_yaw_pub_.publish(odom_yaw);
+    // odom_roll_pub_.publish(odom_roll);
+    // odom_pitch_pub_.publish(odom_pitch);
+    
     // 使用仿真器真实位姿作为无人机的参考位姿
     // drone_odom_.header.frame_id = "world";
     // drone_odom_.pose.pose.position.x = airsim_interface_.drone_poses_true_->pose.position.x;
@@ -307,6 +331,9 @@ void circleTravelTask::droneSetGoalPosion(void) { //设置无人机目标点
     circle_target_pose_.pose.orientation.z = quaternion.z();
 
     if(abs(drone_target_pose_.pose.position.x) < 250 && abs(drone_target_pose_.pose.position.y) < 250 && abs(drone_target_pose_.pose.position.z) < 45) {
+        // drone_target_pose_.pose.position.x = 0;
+        // drone_target_pose_.pose.position.y = 10;
+        // drone_target_pose_.pose.position.z = 3;
         drone_target_pose_.header.frame_id = "world";
         ego_goal_point_pub_.publish(drone_target_pose_);  //发布ego-planner规划器目标路点
 
@@ -405,27 +432,27 @@ void circleTravelTask::dronePosionPDControl(void) { //无人机位置PD控制
         
         // ROS_ERROR("ego,x:%f,y:%f,z:%f,yaw:%f",ego_pos_cmd_.position.x,ego_pos_cmd_.position.y,ego_pos_cmd_.position.z,ego_pos_cmd_.yaw);
         Desired_State_t ego_desired_state;
-        ego_desired_state.p.x() = -ego_pos_cmd_.position.y;
-        ego_desired_state.p.y() =  ego_pos_cmd_.position.x;
-        ego_desired_state.p.z() =  ego_pos_cmd_.position.z;
+        ego_desired_state.p.x() = ego_pos_cmd_.position.x;
+        ego_desired_state.p.y() = ego_pos_cmd_.position.y;
+        ego_desired_state.p.z() = ego_pos_cmd_.position.z;
 
-        ego_desired_state.v.x() = -ego_pos_cmd_.velocity.y;
-        ego_desired_state.v.y() =  ego_pos_cmd_.velocity.x;
-        ego_desired_state.v.z() =  ego_pos_cmd_.velocity.z;
+        ego_desired_state.v.x() = ego_pos_cmd_.velocity.x;
+        ego_desired_state.v.y() = ego_pos_cmd_.velocity.y;
+        ego_desired_state.v.z() = ego_pos_cmd_.velocity.z;
 
-        ego_desired_state.a.x() = -ego_pos_cmd_.acceleration.y;
-        ego_desired_state.a.y() =  ego_pos_cmd_.acceleration.x;
-        ego_desired_state.a.z() =  ego_pos_cmd_.acceleration.z;
+        ego_desired_state.a.x() = ego_pos_cmd_.acceleration.x;
+        ego_desired_state.a.y() = ego_pos_cmd_.acceleration.y;
+        ego_desired_state.a.z() = ego_pos_cmd_.acceleration.z;
 
-        ego_desired_state.jerk.x() = -(ego_pos_cmd_.acceleration.y - last_ego_cmd.acceleration.y) / dt;
-        ego_desired_state.jerk.y() =  (ego_pos_cmd_.acceleration.x - last_ego_cmd.acceleration.x) / dt;
-        ego_desired_state.jerk.z() =  (ego_pos_cmd_.acceleration.z - last_ego_cmd.acceleration.z) / dt;
+        ego_desired_state.jerk.x() = (ego_pos_cmd_.acceleration.x - last_ego_cmd.acceleration.x) / dt;
+        ego_desired_state.jerk.y() = (ego_pos_cmd_.acceleration.y - last_ego_cmd.acceleration.y) / dt;
+        ego_desired_state.jerk.z() = (ego_pos_cmd_.acceleration.z - last_ego_cmd.acceleration.z) / dt;
         // ROS_ERROR("ego_pos:   x:%f,  y:%f,  z:%f ",ego_desired_state.p.x(),ego_desired_state.p.y(),ego_desired_state.p.z());
-        // ROS_ERROR("vel:   x:%f,  y:%f,  z:%f ",ego_desired_state.v.x(),ego_desired_state.v.y(),ego_desired_state.v.z());
-        // ROS_ERROR("acc:   x:%f,  y:%f,  z:%f ",ego_desired_state.a.x(),ego_desired_state.a.y(),ego_desired_state.a.z());
+        // ROS_ERROR("ego_vel:   x:%f,  y:%f,  z:%f ",ego_desired_state.v.x(),ego_desired_state.v.y(),ego_desired_state.v.z());
+        // ROS_ERROR("ego_acc:   x:%f,  y:%f,  z:%f ",ego_desired_state.a.x(),ego_desired_state.a.y(),ego_desired_state.a.z());
         // ROS_ERROR("jerk:   x:%f,  y:%f,  z:%f ",ego_desired_state.jerk.x(),ego_desired_state.jerk.y(),ego_desired_state.jerk.z());
-        ego_desired_state.yaw = -ego_pos_cmd_.yaw;
-        ego_desired_state.head_rate = -ego_pos_cmd_.yaw_dot;
+        ego_desired_state.yaw = ego_pos_cmd_.yaw;
+        ego_desired_state.head_rate = ego_pos_cmd_.yaw_dot;
         // ROS_ERROR("ego_yaw:%f, yaw_rate:%f",ego_desired_state.yaw,ego_desired_state.head_rate);
         Odom_Data_t odom;
         odom.p.x() = drone_odom_.pose.pose.position.x;
@@ -452,17 +479,30 @@ void circleTravelTask::dronePosionPDControl(void) { //无人机位置PD控制
         // ego_odom.w.z() = 1.0f;
         // ROS_ERROR("odom_v:   x:%f,  y:%f,  z:%f ",ego_odom.v.x(),ego_odom.v.y(),ego_odom.v.z());
         // ROS_ERROR("odom_w:   x:%f,  y:%f,  z:%f ",ego_odom.w.x(),ego_odom.w.y(),ego_odom.w.z());
+
+
+        // Controller_Output_t se3_output;
+        // se3_controller_.update(ego_desired_state,odom,se3_output);
+        // Eigen::Vector3d angle_rate;
+        // angle_rate.x() = se3_output.roll_rate;
+        // angle_rate.y() = -se3_output.pitch_rate; 
+        // angle_rate.z() = -se3_output.yaw_rate;
+        // ROS_ERROR("yaw_rate:%f,  pitch_rate:%f,  roll_rate:%f",angle_rate.z(),angle_rate.y(),angle_rate.x());
+        // airsim_interface_.airsimAngleRateThrottleCtrl(se3_output.thrust,angle_rate);
+
         Controller_Output_t se3_output;
-        se3_controller_.update(ego_desired_state,odom,se3_output);
-        Eigen::Vector3d angle_rate;
-        angle_rate.x() = se3_output.roll_rate;
-        angle_rate.y() = se3_output.pitch_rate; 
-        angle_rate.z() = se3_output.yaw_rate;
-        ROS_ERROR("thrust:%f,  yaw_rate:%f,  pitch_rate:%f,  roll_rate:%f",se3_output.thrust,angle_rate.z(),angle_rate.y(),angle_rate.x());
-        airsim_interface_.airsimAngleRateThrottleCtrl(se3_output.thrust,angle_rate);
-        // angle_rate.x() =  0.0f;  // roll正， 向右飞
-        // angle_rate.y() =  0.3f;  // pitch正，抬头，向后飞
-        // angle_rate.z() =  0.0f;  // yaw正，  顺时针飞
+        se3_controller_.update2(ego_desired_state,odom,se3_output);
+        Attitude_Throttle_t desire_attitude_throttle;
+        desire_attitude_throttle.yaw = -se3_output.yaw;
+        desire_attitude_throttle.pitch = -se3_output.pitch;
+        desire_attitude_throttle.roll = se3_output.roll;
+        desire_attitude_throttle.throttle = se3_output.thrust;
+        airsim_interface_.airsimAttitudeThrottleCtrl(desire_attitude_throttle);
+        // ROS_ERROR("target, thrust:%f, yaw:%f, pitch:%f, roll:%f",desire_attitude_throttle.yaw,desire_attitude_throttle.pitch,desire_attitude_throttle.roll);
+
+        // angle_rate.x() =  0.0f; // roll正， 向右飞
+        // angle_rate.y() =  0.0f;  // pitch正，抬头，向后飞
+        // angle_rate.z() =  0.3f;  // yaw正，  顺时针飞
         // airsim_interface_.airsimAngleRateThrottleCtrl(0.6,angle_rate);
 
         // Eigen::Vector3d zero = Eigen::Vector3d::Zero();

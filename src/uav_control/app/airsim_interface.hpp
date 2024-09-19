@@ -12,10 +12,18 @@
 #include <airsim_ros/CirclePoses.h>
 #include <airsim_ros/TreePoses.h>
 #include <airsim_ros/AngleRateThrottle.h>
+#include <airsim_ros/PoseCmd.h>
 #include <sensor_msgs/Image.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <Eigen/Core>
 #include "circle_detection.hpp"
+
+struct Attitude_Throttle_t {
+    double yaw;
+    double pitch;
+    double roll;
+    double throttle;
+};
 
 class airsimInterface{
 private:
@@ -29,7 +37,7 @@ private:
     airsim_ros::CirclePosesConstPtr circle_poses_ref_;   //障碍圈位姿参考值
     airsim_ros::CirclePosesConstPtr circle_poses_true_;  //障碍圈位姿真值 只能debug用
     ros::Subscriber drone_true_odom_sub_,circle_poses_ref_sub_,circle_poses_true_sub_; //仿真器发送的话题
-    ros::Publisher drone_angle_rate_throttle_pub_; 
+    ros::Publisher drone_angle_rate_throttle_pub_, drone_attitude_throttle_pub_; 
     void dronePosesTrueCallBack(const geometry_msgs::PoseStampedConstPtr& drone_poses);
     void circlePosesRefCallBack(const airsim_ros::CirclePosesConstPtr& circle_pose);
     void circlePosesTrueCallBack(const airsim_ros::CirclePosesConstPtr& circle);
@@ -40,6 +48,7 @@ public:
     bool airsimTakeoff(void);
     void airsimSetGoalPosition(const double x,const double y,const double z,const double yaw);
     void airsimAngleRateThrottleCtrl(const double throttle,const Eigen::Vector3d& angle_rate);
+    void airsimAttitudeThrottleCtrl(const Attitude_Throttle_t cmd);
     std::vector<circleMsg> airsimGetCirclePosRef(void);
     std::vector<circleMsg> airsimGetCirclePosTrue(void);
     geometry_msgs::PoseStampedConstPtr drone_poses_true_; //仿真器无人机真实位姿
